@@ -35,6 +35,9 @@ const authConfig = {
       }
     })
   ],
+  session: {
+    strategy: 'jwt'
+  },
   pages: {
     signIn: '/' //sigin page
   }

@@ -19,7 +19,12 @@ import * as z from 'zod';
 import GithubSignInButton from './github-auth-button';
 
 const formSchema = z.object({
-  email: z.string().email({ message: 'Enter a valid email address' })
+  // email: z.string().email({ message: 'Enter a valid email address' })
+  username: z
+    .string()
+    .regex(/^[a-zA-Z0-9]+$/, {
+      message: 'Enter a valid username (letters, numbers, and underscores only)'
+    })
 });
 
 type UserFormValue = z.infer<typeof formSchema>;
@@ -29,7 +34,7 @@ export default function UserAuthForm() {
   const callbackUrl = searchParams.get('callbackUrl');
   const [loading, startTransition] = useTransition();
   const defaultValues = {
-    email: 'demo@gmail.com'
+    username: 'onnexMaster'
   };
   const form = useForm<UserFormValue>({
     resolver: zodResolver(formSchema),
@@ -39,7 +44,7 @@ export default function UserAuthForm() {
   const onSubmit = async (data: UserFormValue) => {
     startTransition(() => {
       signIn('credentials', {
-        email: data.email,
+        username: data.username,
         callbackUrl: callbackUrl ?? '/dashboard'
       });
       toast.success('Signed In Successfully!');
@@ -55,14 +60,14 @@ export default function UserAuthForm() {
         >
           <FormField
             control={form.control}
-            name='email'
+            name='username'
             render={({ field }) => (
               <FormItem>
-                <FormLabel>Email</FormLabel>
+                <FormLabel>Username</FormLabel>
                 <FormControl>
                   <Input
-                    type='email'
-                    placeholder='Enter your email...'
+                    type='text'
+                    placeholder='Enter your username...'
                     disabled={loading}
                     {...field}
                   />
@@ -73,11 +78,11 @@ export default function UserAuthForm() {
           />
 
           <Button disabled={loading} className='ml-auto w-full' type='submit'>
-            Continue With Email
+            Continue With Username
           </Button>
         </form>
       </Form>
-      <div className='relative'>
+      {/* <div className='relative'>
         <div className='absolute inset-0 flex items-center'>
           <span className='w-full border-t' />
         </div>
@@ -87,7 +92,7 @@ export default function UserAuthForm() {
           </span>
         </div>
       </div>
-      <GithubSignInButton />
+      <GithubSignInButton /> */}
     </>
   );
 }

@@ -37,6 +37,9 @@ const authConfig = {
   ],
   pages: {
     signIn: '/' //sigin page
+  },
+  session: {
+    strategy: 'jwt'
   }
 } satisfies NextAuthConfig;
 

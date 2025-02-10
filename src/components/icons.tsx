@@ -30,6 +30,7 @@ import {
   UserCircle2Icon,
   UserPen,
   UserX2Icon,
+  Earth,
   X
 } from 'lucide-react';
 
@@ -63,6 +64,7 @@ export const Icons = {
   pizza: Pizza,
   sun: SunMedium,
   moon: Moon,
+  earth: Earth,
   laptop: Laptop,
   gitHub: ({ ...props }: LucideProps) => (
     <svg

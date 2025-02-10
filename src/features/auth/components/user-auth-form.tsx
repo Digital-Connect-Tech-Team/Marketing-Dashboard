@@ -19,7 +19,15 @@ import * as z from 'zod';
 import GithubSignInButton from './github-auth-button';
 
 const formSchema = z.object({
-  email: z.string().email({ message: 'Enter a valid email address' })
+  email: z.string().email({ message: 'Enter a valid email address' }),
+  password: z
+    .string()
+    .min(8, { message: 'Password must be at least 8 characters long' })
+    // .regex(/[A-Z]/, { message: 'Password must contain at least one uppercase letter' })
+    .regex(/[a-z]/, {
+      message: 'Password must contain at least one lowercase letter'
+    })
+    .regex(/[0-9]/, { message: 'Password must contain at least one number' })
 });
 
 type UserFormValue = z.infer<typeof formSchema>;
@@ -29,7 +37,8 @@ export default function UserAuthForm() {
   const callbackUrl = searchParams.get('callbackUrl');
   const [loading, startTransition] = useTransition();
   const defaultValues = {
-    email: 'demo@gmail.com'
+    email: 'master@example.com',
+    password: 'securepassword123'
   };
   const form = useForm<UserFormValue>({
     resolver: zodResolver(formSchema),
@@ -40,6 +49,7 @@ export default function UserAuthForm() {
     startTransition(() => {
       signIn('credentials', {
         email: data.email,
+        password: data.password,
         callbackUrl: callbackUrl ?? '/dashboard'
       });
       toast.success('Signed In Successfully!');
@@ -72,12 +82,26 @@ export default function UserAuthForm() {
             )}
           />
 
+          <FormField
+            control={form.control}
+            name='password'
+            render={({ field }) => (
+              <FormItem>
+                <FormLabel>Password</FormLabel>
+                <FormControl>
+                  <Input type='password' disabled={loading} {...field} />
+                </FormControl>
+                <FormMessage />
+              </FormItem>
+            )}
+          />
+
           <Button disabled={loading} className='ml-auto w-full' type='submit'>
             Continue With Email
           </Button>
         </form>
       </Form>
-      <div className='relative'>
+      {/* <div className='relative'>
         <div className='absolute inset-0 flex items-center'>
           <span className='w-full border-t' />
         </div>
@@ -87,7 +111,7 @@ export default function UserAuthForm() {
           </span>
         </div>
       </div>
-      <GithubSignInButton />
+      <GithubSignInButton /> */}
     </>
   );
 }

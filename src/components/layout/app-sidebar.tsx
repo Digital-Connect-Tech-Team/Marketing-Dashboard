@@ -46,15 +46,19 @@ import { usePathname } from 'next/navigation';
 import * as React from 'react';
 import { Icons } from '../icons';
 
-export const company = {
-  name: 'Acme Inc',
-  logo: GalleryVerticalEnd,
-  plan: 'Enterprise'
-};
-
 export default function AppSidebar() {
-  const { data: session } = useSession();
+  const { data: session, status } = useSession();
+
+  if (status === 'loading') return <p>Loading...</p>;
   const pathname = usePathname();
+  console.log(session?.user.role.name);
+
+  const company = {
+    name: session?.user.domain?.name || 'Onnex',
+    logo: GalleryVerticalEnd,
+    position: session?.user.role.name
+  };
+
   const { state, isMobile } = useSidebar();
 
   return (
@@ -66,7 +70,7 @@ export default function AppSidebar() {
           </div>
           <div className='grid flex-1 text-left text-sm leading-tight'>
             <span className='truncate font-semibold'>{company.name}</span>
-            <span className='truncate text-xs'>{company.plan}</span>
+            <span className='truncate text-xs'> Role : {company.position}</span>
           </div>
         </div>
       </SidebarHeader>

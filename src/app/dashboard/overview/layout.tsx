@@ -1,5 +1,6 @@
 import PageContainer from '@/components/layout/page-container';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
+import { Bar, BarChart, XAxis } from 'recharts';
 import React from 'react';
 
 export default function OverViewLayout({
@@ -128,8 +129,8 @@ export default function OverViewLayout({
             {/* sales arallel routes */}
             {sales}
           </div>
-          <div className='col-span-4'>{area_stats}</div>
-          <div className='col-span-4 md:col-span-3'>{pie_stats}</div>
+          {/* <div className='col-span-4'>{area_stats}</div>
+          <div className='col-span-4 md:col-span-3'>{pie_stats}</div> */}
         </div>
       </div>
     </PageContainer>

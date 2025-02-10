@@ -55,6 +55,7 @@ model role {
 
 /// The underlying table does not contain a valid unique identifier and can therefore currently not be handled by Prisma Client.
 model ver03 {
+  id  Int     @id @default(autoincrement())
   C1  String? @db.Text
   C2  String? @db.Text
   C3  String? @db.Text
@@ -132,6 +133,4 @@ model ver03 {
   C75 String? @db.Text
   C76 String? @db.Text
   C77 String? @db.Text
-
-  @@ignore
 }

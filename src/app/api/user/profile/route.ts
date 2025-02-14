@@ -1,24 +1,37 @@
 import { NextResponse } from 'next/server';
-import getServerSession from 'next-auth';
-import authConfig from '@/lib/auth.config';
-import { getToken } from 'next-auth/jwt';
 import { prisma } from '@/lib/prisma';
 
-export async function GET() {
+export async function GET(request: Request) {
   try {
-    const data = await prisma.ver03.findMany({
-      where: {
-        C1: 'เฟิร์มวันแล้วรอสำรวจ'
-      }
-    });
+    const { searchParams } = new URL(request.url);
+    const status = searchParams.get('status') || 'main';
 
-    if (!data || data.length === 0) {
-      return NextResponse.json({ message: 'No data found' }, { status: 404 });
+    let rawData: any[];
+
+    if (status === 'main') {
+      rawData = await prisma.$queryRawUnsafe(`
+        SELECT DISTINCT W AS name
+        FROM ver03
+        WHERE W IS NOT NULL AND W != ''
+        ORDER BY W ASC
+      `);
+    } else if (status === 'sub') {
+      rawData = await prisma.$queryRawUnsafe(`
+        SELECT DISTINCT T AS name
+        FROM ver03
+        WHERE T IS NOT NULL AND T != ''
+        ORDER BY T ASC
+      `);
+    } else {
+      return NextResponse.json(
+        { error: 'Invalid status parameter' },
+        { status: 400 }
+      );
     }
 
-    return NextResponse.json({ data }, { status: 200 });
+    return NextResponse.json(rawData);
   } catch (error) {
-    console.error('Error in GET handler:', error);
+    console.error('❌ Error in GET handler:', error);
     return NextResponse.json(
       { error: 'Internal Server Error' },
       { status: 500 }

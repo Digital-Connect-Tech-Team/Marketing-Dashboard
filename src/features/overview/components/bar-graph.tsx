@@ -1,7 +1,14 @@
 'use client';
 
-import { TrendingUp } from 'lucide-react';
-import { Bar, BarChart, CartesianGrid, XAxis, YAxis } from 'recharts';
+import { useState, useEffect } from 'react';
+import {
+  Bar,
+  BarChart,
+  CartesianGrid,
+  XAxis,
+  YAxis,
+  Rectangle
+} from 'recharts';
 
 import {
   Card,
@@ -20,32 +27,93 @@ import {
   ChartTooltipContent
 } from '@/components/ui/chart';
 
-const chartData = [
-  { month: 'January', desktop: 186, mobile: 80 },
-  { month: 'February', desktop: 305, mobile: 200 },
-  { month: 'March', desktop: 237, mobile: 120 },
-  { month: 'April', desktop: 73, mobile: 190 },
-  { month: 'May', desktop: 209, mobile: 130 },
-  { month: 'June', desktop: 214, mobile: 140 }
-];
+type ChartDataItem = {
+  title: string;
+  success: number;
+  await: number;
+};
+
+function CustomBarShape(props: any) {
+  const { fill, x, y, width, height, payload } = props;
+
+  return (
+    <Rectangle
+      x={x}
+      y={y}
+      width={width}
+      height={height}
+      fill={fill}
+      radius={payload.await === 0 ? 9 : [9, 0, 0, 9]}
+    />
+  );
+}
 
 const chartConfig = {
-  desktop: {
-    label: 'Desktop',
+  success: {
+    label: 'success',
     color: 'hsl(var(--chart-1))'
   },
-  mobile: {
-    label: 'Mobile',
+  await: {
+    label: 'await',
     color: 'hsl(var(--chart-2))'
   }
 } satisfies ChartConfig;
 
 export function BarGraph() {
+  const [chartData, setChartData] = useState<ChartDataItem[]>([]);
+  const [loading, setLoading] = useState(true);
+
+  // ฟังก์ชันโหลดข้อมูลจาก localStorage
+  const loadChartData = () => {
+    const storedData = localStorage.getItem('chartData');
+    if (storedData) {
+      setChartData(JSON.parse(storedData).data);
+      setLoading(false);
+    }
+  };
+
+  // โหลดข้อมูลตอน Component mount
+  useEffect(() => {
+    loadChartData();
+  }, []);
+
+  // ตรวจสอบการเปลี่ยนแปลงของ localStorage ทุก 500ms
+  useEffect(() => {
+    const interval = setInterval(() => {
+      const storedData = localStorage.getItem('chartData');
+      if (storedData) {
+        const parsedData = JSON.parse(storedData).data;
+        if (JSON.stringify(parsedData) !== JSON.stringify(chartData)) {
+          setChartData(parsedData);
+        }
+      }
+    }, 500);
+
+    return () => clearInterval(interval);
+  }, [chartData]);
+
+  if (loading) return <div>Loading chart...</div>;
+
+  function handleBarClick(data: any, index: number, type: 'success' | 'await') {
+    const updatedData = chartData.map((item, i) => {
+      if (i === index) {
+        return {
+          ...item,
+          [type]: item[type] + 10
+        };
+      }
+      return item;
+    });
+
+    setChartData(updatedData);
+    localStorage.setItem('chartData', JSON.stringify({ data: updatedData }));
+  }
+
   return (
     <Card>
       <CardHeader>
         <CardTitle>Horizontal Stacked Bar Chart - Legend</CardTitle>
-        <CardDescription>January - June 2024</CardDescription>
+        <CardDescription>Period : January - June 2024</CardDescription>
       </CardHeader>
       <CardContent>
         <ChartContainer config={chartConfig}>
@@ -60,35 +128,33 @@ export function BarGraph() {
             <XAxis type='number' axisLine={false} tickLine={false} />
             <YAxis
               type='category'
-              dataKey='month'
+              dataKey='title'
               axisLine={false}
               tickLine={false}
               width={80}
-              tickFormatter={(value) => value.slice(0, 3)}
             />
             <ChartTooltip content={<ChartTooltipContent hideLabel />} />
             <ChartLegend content={<ChartLegendContent />} />
             <Bar
-              dataKey='desktop'
+              dataKey='success'
               stackId='a'
-              fill='var(--color-desktop)'
-              radius={[0, 4, 4, 0]}
+              fill='var(--color-success)'
+              shape={<CustomBarShape />}
+              onClick={(data, index) => handleBarClick(data, index, 'success')}
             />
             <Bar
-              dataKey='mobile'
+              dataKey='await'
               stackId='a'
-              fill='var(--color-mobile)'
-              radius={[0, 4, 4, 0]}
+              fill='var(--color-await)'
+              radius={[0, 9, 9, 0]}
+              onClick={(data, index) => handleBarClick(data, index, 'await')}
             />
           </BarChart>
         </ChartContainer>
       </CardContent>
       <CardFooter className='flex-col items-start gap-2 text-sm'>
-        <div className='flex gap-2 font-medium leading-none'>
-          Trending up by 5.2% this month <TrendingUp className='h-4 w-4' />
-        </div>
         <div className='leading-none text-muted-foreground'>
-          Showing total visitors for the last 6 months
+          Latest updated: {new Date().toLocaleString()}
         </div>
       </CardFooter>
     </Card>

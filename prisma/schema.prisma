@@ -1,5 +1,6 @@
 generator client {
   provider = "prisma-client-js"
+  seed     = "ts-node src/scripts/seed.ts"
 }
 
 datasource db {
@@ -55,82 +56,83 @@ model role {
 
 /// The underlying table does not contain a valid unique identifier and can therefore currently not be handled by Prisma Client.
 model ver03 {
-  id  Int     @id @default(autoincrement())
-  C1  String? @db.Text
-  C2  String? @db.Text
-  C3  String? @db.Text
-  C4  String? @db.Text
-  C5  String? @db.Text
-  C6  String? @db.Text
-  C7  String? @db.Text
-  C8  String? @db.Text
-  C9  String? @db.Text
-  C10 String? @db.Text
-  C11 String? @db.Text
-  C12 String? @db.Text
-  C13 String? @db.Text
-  C14 Int?
-  C15 String? @db.Text
-  C16 String? @db.Text
-  C17 String? @db.Text
-  C18 String? @db.Text
-  C19 String? @db.Text
-  C20 String? @db.Text
-  C21 String? @db.Text
-  C22 String? @db.Text
-  C23 String? @db.Text
-  C24 String? @db.Text
-  C25 String? @db.Text
-  C26 String? @db.Text
-  C27 String? @db.Text
-  C28 String? @db.Text
-  C29 String? @db.Text
-  C30 String? @db.Text
-  C31 String? @db.Text
-  C32 String? @db.Text
-  C33 String? @db.Text
-  C34 String? @db.Text
-  C35 String? @db.Text
-  C36 String? @db.Text
-  C37 String? @db.Text
-  C38 String? @db.Text
-  C39 String? @db.Text
-  C40 String? @db.Text
-  C41 String? @db.Text
-  C42 String? @db.Text
-  C43 String? @db.Text
-  C44 String? @db.Text
-  C45 String? @db.Text
-  C46 String? @db.Text
-  C47 String? @db.Text
-  C48 String? @db.Text
-  C49 String? @db.Text
-  C50 String? @db.Text
-  C51 String? @db.Text
-  C52 String? @db.Text
-  C53 String? @db.Text
-  C54 String? @db.Text
-  C55 String? @db.Text
-  C56 String? @db.Text
-  C57 String? @db.Text
-  C58 String? @db.Text
-  C59 String? @db.Text
-  C60 String? @db.Text
-  C61 String? @db.Text
-  C62 String? @db.Text
-  C63 String? @db.Text
-  C64 String? @db.Text
-  C65 String? @db.Text
-  C66 String? @db.Text
-  C67 String? @db.Text
-  C68 String? @db.Text
-  C69 String? @db.Text
-  C70 String? @db.Text
-  C71 String? @db.Text
-  C72 String? @db.Text
-  C73 String? @db.Text
-  C74 String? @db.Text
-  C75 String? @db.Text
-  C76 String? @db.Text
-  C77 String? @db.Text
+  id Int      @id @default(autoincrement())
+  A  String?
+  B  String?
+  C  String?
+  D  String?
+  E  String?
+  F  String?
+  G  String?
+  H  String?
+  I  String?
+  J  String?
+  K  String?
+  L  String?
+  M  String?
+  N  Int?
+  O  String?
+  P  String?
+  Q  String?
+  R  String?
+  S  String?
+  T  String?
+  U  String?
+  V  String?
+  W  String?
+  X  String?
+  Y  String?
+  Z  String?
+  AA String?
+  AB String?
+  AC String?
+  AD String?
+  AE String?
+  AF String?
+  AG String?
+  AH String?
+  AI String?
+  AJ String?
+  AK String?
+  AL String?
+  AM String?
+  AN String?
+  AO String?
+  AP String?
+  AQ String?
+  AR String?
+  AS String?
+  AT String?
+  AU String?
+  AV String?
+  AW String?
+  AX String?
+  AY String?
+  AZ String?
+  BA String?
+  BB String?
+  BC String?
+  BD String?
+  BE String?
+  BF String?
+  BG String?
+  BH String?
+  BI String?
+  BJ String?
+  BK String?
+  BL String?
+  BM String?
+  BN String?
+  BO String?
+  BP String?
+  BQ String?
+  BR String?
+  BS String?
+  BT Decimal? @db.Decimal(10, 0)
+  BU String?
+  BV Decimal? @db.Decimal(10, 4)
+  BW String?
+  BX String?
+  BY String?
+  BZ String?
 }

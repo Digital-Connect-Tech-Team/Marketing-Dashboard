@@ -72,7 +72,6 @@ const authConfig = {
       return session;
     },
     async jwt({ token, user }) {
-      console.log('User Data:', user);
       if (user) {
         token.id = user.id;
         token.email = user.email;

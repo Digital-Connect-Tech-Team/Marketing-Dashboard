@@ -9,22 +9,50 @@ export async function GET(request: Request) {
     const page = parseInt(searchParams.get('page') || '1', 10);
     const pageSize = parseInt(searchParams.get('pageSize') || '10', 10);
     const search = searchParams.get('search')?.trim() || '';
+    const status = searchParams.get('status') || 'all'; // 🔹 ใช้ status ควบคุมเงื่อนไข
 
     // คำนวณ Offset สำหรับ Pagination
     const offset = (page - 1) * pageSize;
 
     // 🔍 เงื่อนไขการค้นหา (SQL WHERE)
-    let whereClause = `WHERE F IS NOT NULL AND Z = 'สำรวจแล้ว' AND AI IS NULL AND AI = ''`;
+    let whereClause = `WHERE F IS NOT NULL AND Z = 'สำรวจแล้ว' AND AI IS NOT NULL`;
+
+    // ✅ กำหนดเงื่อนไขจาก `status`
+    switch (status) {
+      case 'high':
+        whereClause += ` AND BU = 'High'`;
+        break;
+      case 'medium':
+        whereClause += ` AND BU = 'Medium'`;
+        break;
+      case 'low':
+        whereClause += ` AND BU = 'Low'`;
+        break;
+      case 'win':
+        whereClause += ` AND BU = 'Win'`;
+        break;
+      case 'loss':
+        whereClause += ` AND BU = 'Loss'`;
+        break;
+      case 'others':
+        whereClause += ` AND BU NOT IN ('High', 'Medium', 'Low', 'Win', 'Loss')`;
+        break;
+      default:
+        break; // ถ้า `status=all` ไม่ต้องเพิ่มเงื่อนไขอะไร
+    }
 
     if (search !== '') {
       whereClause += ` AND (
-        F LIKE '%${search}%'
-        OR G LIKE '%${search}%'
-        OR H LIKE '%${search}%'
-        OR S LIKE '%${search}%'
-      )`;
+                F LIKE '%${search}%'
+                OR G LIKE '%${search}%'
+                OR H LIKE '%${search}%'
+                OR S LIKE '%${search}%'
+            )`;
     }
 
+    console.log('🔍 SQL WHERE Clause:', whereClause);
+
+    // ✅ ดึงข้อมูลตาม Pagination
     const rawData: any[] = await prisma.$queryRawUnsafe(`
       SELECT 
         F AS RD,
@@ -39,6 +67,7 @@ export async function GET(request: Request) {
       LIMIT ${pageSize} OFFSET ${offset};
     `);
 
+    // ✅ แปลงข้อมูลให้ตรงกับ `SaleRes[]`
     const data: SaleRes[] = rawData.map((row) => ({
       RD: row.RD,
       customerName: row.customerName ?? undefined,
@@ -49,7 +78,9 @@ export async function GET(request: Request) {
     }));
 
     // ✅ นับจำนวนรายการทั้งหมด
-    const totalCountResult = await prisma.$queryRawUnsafe<any[]>(`
+    const totalCountResult = await prisma.$queryRawUnsafe<
+      { totalCount: bigint }[]
+    >(`
       SELECT COUNT(*) as totalCount FROM ver03 ${whereClause};
     `);
 

@@ -51,8 +51,6 @@ export default function AppSidebar() {
 
   if (status === 'loading') return <p>Loading...</p>;
   const pathname = usePathname();
-  console.log(session?.user.role.name);
-
   const company = {
     name: session?.user.domain?.name || 'Onnex',
     logo: GalleryVerticalEnd,

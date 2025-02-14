@@ -19,7 +19,7 @@ export default async function Page() {
 
     if (response.ok) {
       const data = await response.json();
-      stars = data.stargazers_count || stars; // Update stars if API response is valid
+      stars = data.stargazers_count || stars;
     }
   } catch (error) {
     console.error('Error fetching GitHub stars:', error);

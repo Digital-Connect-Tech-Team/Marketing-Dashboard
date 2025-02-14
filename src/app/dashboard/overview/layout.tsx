@@ -1,136 +1,177 @@
+'use client';
 import PageContainer from '@/components/layout/page-container';
-import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
-import { Bar, BarChart, XAxis } from 'recharts';
-import React from 'react';
+import React, { useState, useCallback } from 'react';
+import DashboardCards from '@/features/overview/components/DashboardCards';
+import DateRangePicker from '@/features/overview/components/DateRangePicker';
+import ChannelSelect from '@/features/overview/components/ChannelSelect';
+import UserSelect from '@/features/overview/components/UserSelect';
+import { useChartData } from '@/hooks/useChartData';
+import { useFetchUsers } from '@/hooks/useFetchUsers';
+import { useFetchChannels } from '@/hooks/useFetchChannels';
+import { useQueryClient } from '@tanstack/react-query';
+import { DateRange } from 'react-day-picker';
+import { ChartService } from '@/services/ChartDataService';
 
 export default function OverViewLayout({
-  sales,
-  pie_stats,
   bar_stats,
-  area_stats
+  table_stats
 }: {
-  sales: React.ReactNode;
-  pie_stats: React.ReactNode;
   bar_stats: React.ReactNode;
-  area_stats: React.ReactNode;
+  table_stats: React.ReactNode;
 }) {
+  const queryClient = useQueryClient();
+
+  const {
+    mainChannel,
+    subChannel,
+    loading: channelsLoading,
+    fetchError: channelsError
+  } = useFetchChannels();
+  const {
+    users,
+    loading: usersLoading,
+    fetchError: usersError
+  } = useFetchUsers();
+
+  const [dateRange, setDateRange] = useState<DateRange>({
+    from: undefined,
+    to: undefined
+  });
+  const [selectedFilters, setSelectedFilters] = useState({
+    mainChannel: '',
+    subChannel: '',
+    salePerson: ''
+  });
+
+  const { chartData, isLoading } = useChartData(
+    dateRange.from,
+    dateRange.to,
+    selectedFilters
+  );
+
+  // ✅ ฟังก์ชันอัพเดทข้อมูล (ใช้ร่วมกันใน handleFilterChange & handleDateChange)
+  const updateChartData = useCallback(
+    async (filters: typeof selectedFilters, range: DateRange) => {
+      try {
+        console.log('⏳ Fetching new data:', { filters, range });
+        const newData = await ChartService.fetchChartData(
+          range.from,
+          range.to,
+          filters
+        );
+
+        localStorage.setItem(
+          'chartData',
+          JSON.stringify({ data: newData, timestamp: Date.now() })
+        );
+        console.log('✅ Data updated in localStorage:', newData);
+
+        queryClient.invalidateQueries({ queryKey: ['chartData'] });
+      } catch (error) {
+        console.error('❌ Error updating chart data:', error);
+      }
+    },
+    [queryClient]
+  );
+
+  // ✅ ฟังก์ชันเปลี่ยนค่าของฟิลเตอร์ (Main Channel, Sub Channel, Sale Person)
+  const handleFilterChange = useCallback(
+    async (key: keyof typeof selectedFilters, value: string) => {
+      setSelectedFilters((prev) => {
+        const newFilters = { ...prev, [key]: value };
+
+        if (key === 'mainChannel') {
+          newFilters.subChannel = '';
+          newFilters.salePerson = '';
+        }
+        if (key === 'subChannel') {
+          newFilters.salePerson = '';
+        }
+
+        updateChartData(newFilters, dateRange);
+        return newFilters;
+      });
+    },
+    [dateRange, updateChartData]
+  );
+
+  // ✅ ฟังก์ชันเปลี่ยนค่าของวันที่
+  const handleDateChange = useCallback(
+    (range: DateRange) => {
+      if (!range.from) return;
+
+      const newRange = { from: range.from, to: range.to ?? range.from };
+
+      setDateRange(newRange);
+      setSelectedFilters({ mainChannel: '', subChannel: '', salePerson: '' });
+
+      updateChartData(
+        { mainChannel: '', subChannel: '', salePerson: '' },
+        newRange
+      );
+    },
+    [updateChartData]
+  );
+
+  // ✅ รีเซ็ตค่าทั้งหมด
+  const handleReset = () => {
+    setDateRange({ from: undefined, to: undefined });
+    setSelectedFilters({ mainChannel: '', subChannel: '', salePerson: '' });
+    console.log('🔄 Reset all filters');
+    queryClient.invalidateQueries({ queryKey: ['chartData'] });
+  };
+
   return (
     <PageContainer>
       <div className='flex flex-1 flex-col space-y-2'>
-        <div className='flex items-center justify-between space-y-2'>
-          <h2 className='text-2xl font-bold tracking-tight'>
-            Hi, Welcome back 👋
-          </h2>
+        <h2 className='text-2xl font-bold tracking-tight'>
+          Sale Performance Dashboard
+        </h2>
+        <h2 className='text-1xl font-bold tracking-tight'>
+          Products: SCG Solar Roof Solution (OB)
+        </h2>
+
+        <DashboardCards data={chartData ?? []} isLoading={isLoading} />
+
+        <div className='flex flex-row gap-4 py-2'>
+          <DateRangePicker
+            dateRange={dateRange}
+            onDateChange={handleDateChange}
+          />
+          <ChannelSelect
+            type='main'
+            channels={mainChannel}
+            loading={channelsLoading}
+            error={channelsError}
+            selected={selectedFilters.mainChannel}
+            onChange={(value) => handleFilterChange('mainChannel', value)}
+          />
+          <ChannelSelect
+            type='sub'
+            channels={subChannel}
+            loading={channelsLoading}
+            error={channelsError}
+            selected={selectedFilters.subChannel}
+            onChange={(value) => handleFilterChange('subChannel', value)}
+          />
+          <UserSelect
+            users={users}
+            loading={usersLoading}
+            error={usersError}
+            selected={selectedFilters.salePerson}
+            onChange={(value) => handleFilterChange('salePerson', value)}
+          />
+          <button
+            className='rounded bg-red-500 px-4 py-2 text-white'
+            onClick={handleReset}
+          >
+            Reset
+          </button>
         </div>
-        <div className='grid gap-4 md:grid-cols-2 lg:grid-cols-4'>
-          <Card>
-            <CardHeader className='flex flex-row items-center justify-between space-y-0 pb-2'>
-              <CardTitle className='text-sm font-medium'>
-                Total Revenue
-              </CardTitle>
-              <svg
-                xmlns='http://www.w3.org/2000/svg'
-                viewBox='0 0 24 24'
-                fill='none'
-                stroke='currentColor'
-                strokeLinecap='round'
-                strokeLinejoin='round'
-                strokeWidth='2'
-                className='h-4 w-4 text-muted-foreground'
-              >
-                <path d='M12 2v20M17 5H9.5a3.5 3.5 0 0 0 0 7h5a3.5 3.5 0 0 1 0 7H6' />
-              </svg>
-            </CardHeader>
-            <CardContent>
-              <div className='text-2xl font-bold'>$45,231.89</div>
-              <p className='text-xs text-muted-foreground'>
-                +20.1% from last month
-              </p>
-            </CardContent>
-          </Card>
-          <Card>
-            <CardHeader className='flex flex-row items-center justify-between space-y-0 pb-2'>
-              <CardTitle className='text-sm font-medium'>
-                Subscriptions
-              </CardTitle>
-              <svg
-                xmlns='http://www.w3.org/2000/svg'
-                viewBox='0 0 24 24'
-                fill='none'
-                stroke='currentColor'
-                strokeLinecap='round'
-                strokeLinejoin='round'
-                strokeWidth='2'
-                className='h-4 w-4 text-muted-foreground'
-              >
-                <path d='M16 21v-2a4 4 0 0 0-4-4H6a4 4 0 0 0-4 4v2' />
-                <circle cx='9' cy='7' r='4' />
-                <path d='M22 21v-2a4 4 0 0 0-3-3.87M16 3.13a4 4 0 0 1 0 7.75' />
-              </svg>
-            </CardHeader>
-            <CardContent>
-              <div className='text-2xl font-bold'>+2350</div>
-              <p className='text-xs text-muted-foreground'>
-                +180.1% from last month
-              </p>
-            </CardContent>
-          </Card>
-          <Card>
-            <CardHeader className='flex flex-row items-center justify-between space-y-0 pb-2'>
-              <CardTitle className='text-sm font-medium'>Sales</CardTitle>
-              <svg
-                xmlns='http://www.w3.org/2000/svg'
-                viewBox='0 0 24 24'
-                fill='none'
-                stroke='currentColor'
-                strokeLinecap='round'
-                strokeLinejoin='round'
-                strokeWidth='2'
-                className='h-4 w-4 text-muted-foreground'
-              >
-                <rect width='20' height='14' x='2' y='5' rx='2' />
-                <path d='M2 10h20' />
-              </svg>
-            </CardHeader>
-            <CardContent>
-              <div className='text-2xl font-bold'>+12,234</div>
-              <p className='text-xs text-muted-foreground'>
-                +19% from last month
-              </p>
-            </CardContent>
-          </Card>
-          <Card>
-            <CardHeader className='flex flex-row items-center justify-between space-y-0 pb-2'>
-              <CardTitle className='text-sm font-medium'>Active Now</CardTitle>
-              <svg
-                xmlns='http://www.w3.org/2000/svg'
-                viewBox='0 0 24 24'
-                fill='none'
-                stroke='currentColor'
-                strokeLinecap='round'
-                strokeLinejoin='round'
-                strokeWidth='2'
-                className='h-4 w-4 text-muted-foreground'
-              >
-                <path d='M22 12h-4l-3 9L9 3l-3 9H2' />
-              </svg>
-            </CardHeader>
-            <CardContent>
-              <div className='text-2xl font-bold'>+573</div>
-              <p className='text-xs text-muted-foreground'>
-                +201 since last hour
-              </p>
-            </CardContent>
-          </Card>
-        </div>
-        <div className='grid grid-cols-1 gap-4 md:grid-cols-2 lg:grid-cols-7'>
+
+        <div className='grid grid-cols-1 gap-4 md:grid-cols-2 lg:grid-cols-8'>
           <div className='col-span-4'>{bar_stats}</div>
-          <div className='col-span-4 md:col-span-3'>
-            {/* sales arallel routes */}
-            {sales}
-          </div>
-          {/* <div className='col-span-4'>{area_stats}</div>
-          <div className='col-span-4 md:col-span-3'>{pie_stats}</div> */}
+          <div className='col-span-4'>{table_stats}</div>
         </div>
       </div>
     </PageContainer>

@@ -48,16 +48,15 @@ import { Icons } from '../icons';
 
 export default function AppSidebar() {
   const { data: session, status } = useSession();
+  const pathname = usePathname();
+  const { state, isMobile } = useSidebar();
 
   if (status === 'loading') return <p>Loading...</p>;
-  const pathname = usePathname();
   const company = {
     name: session?.user.domain?.name || 'Onnex',
     logo: GalleryVerticalEnd,
     position: session?.user.role.name
   };
-
-  const { state, isMobile } = useSidebar();
 
   return (
     <Sidebar collapsible='icon'>

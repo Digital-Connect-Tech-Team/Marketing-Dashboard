@@ -66,9 +66,10 @@ export class ChartService {
       'lead?status=not_surveyed',
       'lead?status=quotation',
       'lead?status=not_quotation',
-      'lead?status=nurturingHigh',
-      'lead?status=nurturingMedium',
-      'lead?status=nurturingLow',
+      // 'lead?status=nurturingHigh',
+      // 'lead?status=nurturingMedium',
+      // 'lead?status=nurturingLow',
+      'lead?status=nurturingHML',
       'lead?status=nurturingOthers',
       'lead?status=nurturingWin',
       'lead?status=nurturingLoss'
@@ -96,61 +97,186 @@ export class ChartService {
       { title: 'Quotation', success: dataMap[3], await: dataMap[4] },
       {
         title: 'Nurturing',
-        success: dataMap[5] + dataMap[6] + dataMap[7],
-        await: dataMap[8]
+        success: dataMap[5],
+        await: dataMap[6]
       },
-      { title: 'Win/Loss', success: dataMap[9], await: dataMap[10] }
+      { title: 'Win/Loss', success: dataMap[7], await: dataMap[8] }
     ];
   }
 
-  // static async fetchLeadSaleCount(
-  //     page: number,
-  //     pageSize: number,
-  //     search: string
-  // ): Promise<{ data: ResTableItem[]; total: number }> {
-  //     try {
-  //         // const url = new URL("http://localhost:3000/api/lead?status=all");
-  //         // url.searchParams.append("page", page.toString());
-  //         // url.searchParams.append("pageSize", pageSize.toString());
-  //         // if (search.trim() !== "") {
-  //         //     url.searchParams.append("search", search);
-  //         // }
+  static async updateChartData(
+    category: string,
+    type: string,
+    page: number = 1,
+    pageSize: number = 10,
+    activeBadge: string | null
+  ): Promise<{
+    data: ResTableItem[];
+    total: number;
+    currentPage: number;
+    totalPages: number;
+  }> {
+    try {
+      // ✅ ดึงค่าจาก `localStorage`
+      const storedFilters =
+        typeof window !== 'undefined'
+          ? localStorage.getItem('selectedFilters')
+          : null;
+      const storedDateRange =
+        typeof window !== 'undefined'
+          ? localStorage.getItem('dateRange')
+          : null;
+      const filters = storedFilters ? JSON.parse(storedFilters) : {};
+      const dateRange = storedDateRange ? JSON.parse(storedDateRange) : {};
 
-  //         // console.log("📡 Fetching:", url.toString()); // ✅ Debugging
+      // ✅ กำหนดค่าเริ่มต้น ถ้า `localStorage` ไม่มีค่า
+      const search = filters.search ?? '';
+      const mainChannel = filters.mainChannel ?? '';
+      const subChannel = filters.subChannel ?? '';
+      const salePerson = filters.salePerson ?? '';
+      const fromDate = dateRange.from
+        ? new Date(dateRange.from).toISOString()
+        : '';
+      const toDate = dateRange.to ? new Date(dateRange.to).toISOString() : '';
 
-  //         // const response = await fetch(url.toString());
-  //         // if (!response.ok) throw new Error("API request failed");
+      let status = '';
+      if (category) {
+        switch (category) {
+          case 'Lead Sales':
+            status = 'all';
+            break;
+          case 'Survey':
+            status = type === 'success' ? 'surveyed' : 'not_surveyed';
+            break;
+          case 'Quotation':
+            status = type === 'success' ? 'quotation' : 'not_quotation';
+            break;
+          case 'Nurturing':
+            status = type === 'success' ? 'nurturingHML' : 'nurturingOthers';
+            if (status === 'nurturingHML') {
+              if (activeBadge === 'Total') {
+                status = 'nurturingHML';
+              } else if (activeBadge === 'High') {
+                status = 'nurturingHigh';
+              } else if (activeBadge === 'Medium') {
+                status = 'nurturingMedium';
+              } else if (activeBadge === 'Low') {
+                status = 'nurturingLow';
+              }
+            }
+            break;
+          case 'Win/Loss':
+            status = type === 'success' ? 'nurturingWin' : 'nurturingLoss';
+            break;
+        }
+      }
 
-  //         // const result = await response.json();
-  //         // console.log("📊 API Response:", result); // ✅ Debugging
+      const url = new URL('http://localhost:3000/api/lead');
+      url.searchParams.append('status', status);
+      url.searchParams.append('page', page.toString());
+      url.searchParams.append('pageSize', pageSize.toString());
+      if (search.trim() !== '') url.searchParams.append('search', search);
+      if (mainChannel !== '')
+        url.searchParams.append('mainChannel', mainChannel);
+      if (subChannel !== '') url.searchParams.append('subChannel', subChannel);
+      if (salePerson !== '') url.searchParams.append('salePerson', salePerson);
+      if (fromDate !== '') url.searchParams.append('from', fromDate);
+      if (toDate !== '') url.searchParams.append('to', toDate);
 
-  //         // C6: true,  // เลือก RD
-  //         // C7: true,  // เลือก ชื่อลูกค้า
-  //         // C8: true,  // เลือก เบอร์โทร
-  //         // C19: true, // เลือก ช่องทางขายหลัก
-  //         // C20: true, // เลือก ช่องทางขายรอง
-  //         // C74: true, // เลือก มูลค่างาน
+      console.log('📡 Fetching data from:', url.toString());
 
-  //         // F AS RD,
-  //         // G AS customerName,
-  //         // H AS phoneNumber,
-  //         // S AS mainChannel,
-  //         // T AS secondaryChannel,
-  //         // BV AS workValue
+      // ✅ ทำ `GET` Request ไปที่ API
+      const response = await fetch(url.toString());
+      if (!response.ok) throw new Error('API request failed');
 
-  //         // return {
-  //         //     data: result.data.map((item: any) => ({
-  //         //         rd: item.F,
-  //         //         name: item.G,
-  //         //         main: item.S,
-  //         //         sub: item.T,
-  //         //         total: item.BV,
-  //         //     })),
-  //         //     total: result.totalCount,
-  //         // };
-  //     } catch (error) {
-  //         console.error("❌ Error fetching lead sale count:", error);
-  //         return { data: [], total: 0 };
-  //     }
-  // }
+      const result = await response.json();
+
+      const totalCount = result.totalCount ?? 0;
+      const totalPages = Math.ceil(totalCount / pageSize);
+
+      return {
+        data: result.data || [],
+        total: result.total ?? result.data.length ?? 10, // ✅ ใช้ default 10 ถ้าไม่มีค่า
+        currentPage: page,
+        totalPages: totalPages
+      };
+    } catch (error) {
+      console.error('❌ Error fetching lead sale count:', error);
+      return { data: [], total: 0, currentPage: 1, totalPages: 1 };
+    }
+  }
+
+  static async fetchNurturingCount(
+    type: string,
+    page: number = 1,
+    pageSize: number = 10
+  ): Promise<{ count: number }> {
+    try {
+      // ✅ ดึงค่าจาก `localStorage`
+      const storedFilters =
+        typeof window !== 'undefined'
+          ? localStorage.getItem('selectedFilters')
+          : null;
+      const storedDateRange =
+        typeof window !== 'undefined'
+          ? localStorage.getItem('dateRange')
+          : null;
+      const filters = storedFilters ? JSON.parse(storedFilters) : {};
+      const dateRange = storedDateRange ? JSON.parse(storedDateRange) : {};
+
+      // ✅ กำหนดค่าเริ่มต้น ถ้า `localStorage` ไม่มีค่า
+      const search = filters.search ?? '';
+      const mainChannel = filters.mainChannel ?? '';
+      const subChannel = filters.subChannel ?? '';
+      const salePerson = filters.salePerson ?? '';
+      const fromDate = dateRange.from
+        ? new Date(dateRange.from).toISOString()
+        : '';
+      const toDate = dateRange.to ? new Date(dateRange.to).toISOString() : '';
+
+      // ✅ กำหนด `status` ให้ตรงกับ `type`
+      let status = '';
+      switch (type) {
+        case 'Total':
+          status = 'nurturingHML';
+          break;
+        case 'High':
+          status = 'nurturingHigh';
+          break;
+        case 'Medium':
+          status = 'nurturingMedium';
+          break;
+        case 'Low':
+          status = 'nurturingLow';
+          break;
+        default:
+          throw new Error(`Invalid type: ${type}`);
+      }
+
+      const url = new URL('http://localhost:3000/api/lead');
+      url.searchParams.append('status', status);
+      url.searchParams.append('page', page.toString());
+      url.searchParams.append('pageSize', pageSize.toString());
+      if (search.trim() !== '') url.searchParams.append('search', search);
+      if (mainChannel !== '')
+        url.searchParams.append('mainChannel', mainChannel);
+      if (subChannel !== '') url.searchParams.append('subChannel', subChannel);
+      if (salePerson !== '') url.searchParams.append('salePerson', salePerson);
+      if (fromDate !== '') url.searchParams.append('from', fromDate);
+      if (toDate !== '') url.searchParams.append('to', toDate);
+
+      console.log(
+        `📡 Fetching nurturing count: ${type} from ${url.toString()}`
+      );
+
+      const response = await fetch(url.toString());
+      if (!response.ok) throw new Error(`API request failed for type ${type}`);
+
+      const result = await response.json();
+      return { count: result.totalCount ?? 0 };
+    } catch (error) {
+      console.error(`❌ Error fetching nurturing count for ${type}:`, error);
+      return { count: 0 };
+    }
+  }
 }

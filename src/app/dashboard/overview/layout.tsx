@@ -1,6 +1,6 @@
 'use client';
 import PageContainer from '@/components/layout/page-container';
-import React, { useState, useCallback } from 'react';
+import React, { useState, useCallback, useEffect } from 'react';
 import DashboardCards from '@/features/overview/components/DashboardCards';
 import DateRangePicker from '@/features/overview/components/DateRangePicker';
 import ChannelSelect from '@/features/overview/components/ChannelSelect';
@@ -33,10 +33,31 @@ export default function OverViewLayout({
     fetchError: usersError
   } = useFetchUsers();
 
+  // ✅ โหลดค่าจาก `localStorage` เมื่อ Component Mount
+  useEffect(() => {
+    if (typeof window !== 'undefined') {
+      try {
+        const storedFilters = localStorage.getItem('selectedFilters');
+        const storedDateRange = localStorage.getItem('dateRange');
+
+        if (storedFilters) {
+          setSelectedFilters(JSON.parse(storedFilters));
+        }
+
+        if (storedDateRange) {
+          setDateRange(JSON.parse(storedDateRange));
+        }
+      } catch (error) {
+        console.error('❌ Error loading filters from localStorage:', error);
+      }
+    }
+  }, []);
+
   const [dateRange, setDateRange] = useState<DateRange>({
     from: undefined,
     to: undefined
   });
+
   const [selectedFilters, setSelectedFilters] = useState({
     mainChannel: '',
     subChannel: '',
@@ -49,7 +70,7 @@ export default function OverViewLayout({
     selectedFilters
   );
 
-  // ✅ ฟังก์ชันอัพเดทข้อมูล (ใช้ร่วมกันใน handleFilterChange & handleDateChange)
+  // ✅ ฟังก์ชันอัปเดตข้อมูล
   const updateChartData = useCallback(
     async (filters: typeof selectedFilters, range: DateRange) => {
       try {
@@ -88,6 +109,8 @@ export default function OverViewLayout({
           newFilters.salePerson = '';
         }
 
+        localStorage.setItem('selectedFilters', JSON.stringify(newFilters)); // ✅ อัปเดต `localStorage`
+
         updateChartData(newFilters, dateRange);
         return newFilters;
       });
@@ -105,6 +128,12 @@ export default function OverViewLayout({
       setDateRange(newRange);
       setSelectedFilters({ mainChannel: '', subChannel: '', salePerson: '' });
 
+      localStorage.setItem('dateRange', JSON.stringify(newRange)); // ✅ อัปเดต `localStorage`
+      localStorage.setItem(
+        'selectedFilters',
+        JSON.stringify({ mainChannel: '', subChannel: '', salePerson: '' })
+      );
+
       updateChartData(
         { mainChannel: '', subChannel: '', salePerson: '' },
         newRange
@@ -117,6 +146,10 @@ export default function OverViewLayout({
   const handleReset = () => {
     setDateRange({ from: undefined, to: undefined });
     setSelectedFilters({ mainChannel: '', subChannel: '', salePerson: '' });
+
+    localStorage.removeItem('selectedFilters');
+    localStorage.removeItem('dateRange');
+
     console.log('🔄 Reset all filters');
     queryClient.invalidateQueries({ queryKey: ['chartData'] });
   };

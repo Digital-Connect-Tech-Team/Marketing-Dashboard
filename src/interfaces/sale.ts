@@ -5,4 +5,5 @@ export type SaleRes = {
   mainChannel?: string;
   secondaryChannel?: string;
   workValue?: number;
+  nurturingType?: string;
 };

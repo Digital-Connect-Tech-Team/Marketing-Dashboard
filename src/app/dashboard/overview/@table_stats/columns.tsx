@@ -14,7 +14,7 @@ export type Payment = {
 
 export const columns: ColumnDef<Payment>[] = [
   {
-    accessorKey: 'rd',
+    accessorKey: 'RD',
     // header: "RD",
     header: ({ column }) => {
       return (
@@ -42,19 +42,19 @@ export const columns: ColumnDef<Payment>[] = [
   //     },
   //   },
   {
-    accessorKey: 'name',
+    accessorKey: 'customerName',
     header: 'Name'
   },
   {
-    accessorKey: 'main',
+    accessorKey: 'mainChannel',
     header: 'Main Channel'
   },
   {
-    accessorKey: 'sub',
+    accessorKey: 'secondaryChannel',
     header: 'Sub Channel'
   },
   {
-    accessorKey: 'total',
+    accessorKey: 'workValue',
     header: 'Total (VAT)'
   }
 ];

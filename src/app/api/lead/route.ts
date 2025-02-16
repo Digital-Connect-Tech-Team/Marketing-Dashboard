@@ -13,122 +13,102 @@ function convertToExcelSerial(isoDate: string): number {
   return 0;
 }
 
+function saveSearchParamsToLocalStorage(params: Record<string, string>) {
+  try {
+    localStorage.setItem('searchParams', JSON.stringify(params));
+    console.log('✅ searchParams saved:', params);
+  } catch (error) {
+    console.error('❌ Failed to save searchParams to localStorage:', error);
+  }
+}
+
 export async function GET(request: Request) {
   try {
     const { searchParams } = new URL(request.url);
 
-    const page = parseInt(searchParams.get('page') || '1', 10);
-    const pageSize = parseInt(searchParams.get('pageSize') || '10', 10);
-    const search = searchParams.get('search')?.trim() || '';
-    const status = searchParams.get('status') || 'all';
-    const mainChannel = searchParams.get('mainChannel')?.trim() || '';
-    const subChannel = searchParams.get('subChannel')?.trim() || '';
-    const salePerson = searchParams.get('salePerson')?.trim() || '';
-    const fromDate = convertToExcelSerial(
-      searchParams.get('from')?.trim() || ''
-    );
-    const toDate = convertToExcelSerial(searchParams.get('to')?.trim() || '');
+    const params = {
+      page: searchParams.get('page') || '1',
+      pageSize: searchParams.get('pageSize') || '10',
+      search: searchParams.get('search')?.trim() || '',
+      status: searchParams.get('status') || 'all',
+      mainChannel: searchParams.get('mainChannel')?.trim() || '',
+      subChannel: searchParams.get('subChannel')?.trim() || '',
+      salePerson: searchParams.get('salePerson')?.trim() || '',
+      from: searchParams.get('from')?.trim() || '',
+      to: searchParams.get('to')?.trim() || ''
+    };
 
-    // คำนวณ Offset สำหรับ Pagination
-    const offset = (page - 1) * pageSize;
+    const fromDate = convertToExcelSerial(params.from);
+    const toDate = convertToExcelSerial(params.to);
 
-    // 🔍 เงื่อนไขการค้นหา (SQL WHERE)
+    const offset =
+      (parseInt(params.page, 10) - 1) * parseInt(params.pageSize, 10);
     let whereClause = `WHERE F IS NOT NULL`;
 
     if (fromDate && toDate) {
       whereClause += ` AND Q BETWEEN '${fromDate}' AND '${toDate}'`;
     }
+    if (params.mainChannel) whereClause += ` AND S = '${params.mainChannel}'`;
+    if (params.subChannel) whereClause += ` AND T = '${params.subChannel}'`;
+    if (params.salePerson) whereClause += ` AND W = '${params.salePerson}'`;
 
-    if (mainChannel !== '') {
-      whereClause += ` AND S = '${mainChannel}'`;
+    const statusConditions: Record<string, string> = {
+      surveyed: ` AND Z = 'สำรวจแล้ว'`,
+      not_surveyed: ` AND Z != 'สำรวจแล้ว'`,
+      quotation: ` AND Z = 'สำรวจแล้ว' AND AI IS NOT NULL AND AI != ''`,
+      not_quotation: ` AND Z = 'สำรวจแล้ว' AND (AI IS NULL OR AI = '')`,
+      nurturingHigh: ` AND Z = 'สำรวจแล้ว' AND AI IS NOT NULL AND AI != '' AND BU = 'High'`,
+      nurturingMedium: ` AND Z = 'สำรวจแล้ว' AND AI IS NOT NULL AND AI != '' AND BU = 'Medium'`,
+      nurturingLow: ` AND Z = 'สำรวจแล้ว' AND AI IS NOT NULL AND AI != '' AND BU = 'Low'`,
+      nurturingWin: ` AND Z = 'สำรวจแล้ว' AND AI IS NOT NULL AND AI != '' AND BU = 'Win'`,
+      nurturingLoss: ` AND Z = 'สำรวจแล้ว' AND AI IS NOT NULL AND AI != '' AND BU = 'Loss'`,
+      nurturingOthers: ` AND Z = 'สำรวจแล้ว' AND AI IS NOT NULL AND AI != '' AND BU NOT IN ('High', 'Medium', 'Low', 'Win', 'Loss')`,
+      nurturingHML: ` AND Z = 'สำรวจแล้ว' AND AI IS NOT NULL AND AI != '' AND BU IN ('High', 'Medium', 'Low')`
+    };
+
+    if (params.status in statusConditions) {
+      whereClause += statusConditions[params.status];
     }
 
-    if (subChannel !== '') {
-      whereClause += ` AND T = '${subChannel}'`;
-    }
-
-    if (salePerson !== '') {
-      whereClause += ` AND W = '${salePerson}'`;
-    }
-
-    // ✅ กำหนดเงื่อนไขจาก `status`
-    switch (status) {
-      case 'surveyed':
-        whereClause += ` AND Z = 'สำรวจแล้ว'`;
-        break;
-      case 'not_surveyed':
-        whereClause += ` AND Z != 'สำรวจแล้ว'`;
-        break;
-      case 'quotation':
-        whereClause += ` AND Z = 'สำรวจแล้ว' AND AI IS NOT NULL AND AI != ''`;
-        break;
-      case 'not_quotation':
-        whereClause += ` AND Z = 'สำรวจแล้ว' AND (AI IS NULL OR AI = '')`;
-        break;
-      case 'nurturingHigh':
-        whereClause += ` AND Z = 'สำรวจแล้ว' AND AI IS NOT NULL AND AI != '' AND BU = 'High'`;
-        break;
-      case 'nurturingMedium':
-        whereClause += ` AND Z = 'สำรวจแล้ว' AND AI IS NOT NULL AND AI != '' AND BU = 'Medium'`;
-        break;
-      case 'nurturingLow':
-        whereClause += ` AND Z = 'สำรวจแล้ว' AND AI IS NOT NULL AND AI != '' AND BU = 'Low'`;
-        break;
-      case 'nurturingWin':
-        whereClause += ` AND Z = 'สำรวจแล้ว' AND AI IS NOT NULL AND AI != '' AND BU = 'Win'`;
-        break;
-      case 'nurturingLoss':
-        whereClause += ` AND Z = 'สำรวจแล้ว' AND AI IS NOT NULL AND AI != '' AND BU = 'Loss'`;
-        break;
-      case 'nurturingOthers':
-        whereClause += ` AND Z = 'สำรวจแล้ว' AND AI IS NOT NULL AND AI != '' AND BU NOT IN ('High', 'Medium', 'Low', 'Win', 'Loss')`;
-        break;
-      default:
-        break;
-    }
-
-    if (search !== '') {
+    if (params.search) {
       whereClause += ` AND (
-                F LIKE '%${search}%'
-                OR G LIKE '%${search}%'
-                OR H LIKE '%${search}%'
-                OR S LIKE '%${search}%'
-            )`;
+                    F LIKE '%${params.search}%'
+                    OR G LIKE '%${params.search}%'
+                    OR H LIKE '%${params.search}%'
+                    OR S LIKE '%${params.search}%'
+                )`;
     }
 
-    console.log('🔍 SQL WHERE Clause:', whereClause);
-
-    // ✅ ดึงข้อมูลตาม Pagination
     const rawData: any[] = await prisma.$queryRawUnsafe(`
-            SELECT 
-                F AS RD,
-                G AS customerName,
-                H AS phoneNumber,
-                S AS mainChannel,
-                T AS secondaryChannel,
-                BV AS workValue
-            FROM ver03
-            ${whereClause}
-            ORDER BY id ASC
-            LIMIT ${pageSize} OFFSET ${offset};
-        `);
+                SELECT 
+                    F AS RD,
+                    G AS customerName,
+                    H AS phoneNumber,
+                    S AS mainChannel,
+                    T AS secondaryChannel,
+                    BV AS workValue,
+                    BU AS nurturingType
+                FROM ver03
+                ${whereClause}
+                ORDER BY id ASC
+                LIMIT ${params.pageSize} OFFSET ${offset};
+            `);
 
-    // ✅ แปลงข้อมูลให้ตรงกับ `SaleRes[]`
     const data: SaleRes[] = rawData.map((row) => ({
       RD: row.RD,
       customerName: row.customerName ?? undefined,
       phoneNumber: row.phoneNumber ?? undefined,
       mainChannel: row.mainChannel ?? undefined,
       secondaryChannel: row.secondaryChannel ?? undefined,
-      workValue: row.workValue ? Number(row.workValue) : undefined
+      workValue: row.workValue ? Number(row.workValue) : undefined,
+      nurturingType: row.nurturingType ?? undefined
     }));
 
-    // ✅ นับจำนวนรายการทั้งหมด
     const totalCountResult = await prisma.$queryRawUnsafe<
       { totalCount: bigint }[]
     >(`
-      SELECT COUNT(*) as totalCount FROM ver03 ${whereClause};
-    `);
+          SELECT COUNT(*) as totalCount FROM ver03 ${whereClause};
+        `);
 
     const totalCount =
       totalCountResult.length > 0 ? Number(totalCountResult[0].totalCount) : 0;
@@ -136,8 +116,8 @@ export async function GET(request: Request) {
     return NextResponse.json({
       data,
       totalCount,
-      currentPage: page,
-      totalPages: Math.ceil(totalCount / pageSize)
+      currentPage: parseInt(params.page, 10),
+      totalPages: Math.ceil(totalCount / parseInt(params.pageSize, 10))
     });
   } catch (error) {
     console.error('❌ Error in GET handler:', error);

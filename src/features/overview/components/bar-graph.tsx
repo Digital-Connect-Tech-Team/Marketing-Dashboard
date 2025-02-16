@@ -35,7 +35,6 @@ type ChartDataItem = {
 
 function CustomBarShape(props: any) {
   const { fill, x, y, width, height, payload } = props;
-
   return (
     <Rectangle
       x={x}
@@ -49,71 +48,65 @@ function CustomBarShape(props: any) {
 }
 
 const chartConfig = {
-  success: {
-    label: 'success',
-    color: 'hsl(var(--chart-1))'
-  },
-  await: {
-    label: 'await',
-    color: 'hsl(var(--chart-2))'
-  }
+  success: { label: 'success', color: 'hsl(var(--chart-1))' },
+  await: { label: 'await', color: 'hsl(var(--chart-2))' }
 } satisfies ChartConfig;
 
 export function BarGraph() {
   const [chartData, setChartData] = useState<ChartDataItem[]>([]);
   const [loading, setLoading] = useState(true);
+  const [dateRange, setDateRange] = useState<string | null>(null);
 
-  // ฟังก์ชันโหลดข้อมูลจาก localStorage
-  const loadChartData = () => {
-    const storedData = localStorage.getItem('chartData');
-    if (storedData) {
-      setChartData(JSON.parse(storedData).data);
-      setLoading(false);
-    }
-  };
-
-  // โหลดข้อมูลตอน Component mount
   useEffect(() => {
+    const loadChartData = () => {
+      try {
+        const storedData = localStorage.getItem('chartData');
+        if (storedData) {
+          setChartData(JSON.parse(storedData).data);
+        }
+      } catch (error) {
+        console.error('❌ Error loading chart data:', error);
+      } finally {
+        setLoading(false);
+      }
+    };
+
     loadChartData();
+    const interval = setInterval(loadChartData, 1000);
+    return () => clearInterval(interval);
   }, []);
 
-  // ตรวจสอบการเปลี่ยนแปลงของ localStorage ทุก 500ms
   useEffect(() => {
-    const interval = setInterval(() => {
-      const storedData = localStorage.getItem('chartData');
-      if (storedData) {
-        const parsedData = JSON.parse(storedData).data;
-        if (JSON.stringify(parsedData) !== JSON.stringify(chartData)) {
-          setChartData(parsedData);
-        }
+    const storedDateRange = localStorage.getItem('dateRange');
+    if (storedDateRange) {
+      try {
+        const parsedDateRange = JSON.parse(storedDateRange);
+        const fromDate = new Date(parsedDateRange.from).toLocaleDateString(
+          'en-GB'
+        );
+        const toDate = new Date(parsedDateRange.to).toLocaleDateString('en-GB');
+        setDateRange(`${fromDate} - ${toDate}`);
+      } catch (error) {
+        console.error('❌ Error parsing dateRange:', error);
+        setDateRange(null);
       }
-    }, 500);
-
-    return () => clearInterval(interval);
-  }, [chartData]);
-
-  if (loading) return <div>Loading chart...</div>;
-
-  function handleBarClick(data: any, index: number, type: 'success' | 'await') {
-    const updatedData = chartData.map((item, i) => {
-      if (i === index) {
-        return {
-          ...item,
-          [type]: item[type] + 10
-        };
-      }
-      return item;
-    });
-
-    setChartData(updatedData);
-    localStorage.setItem('chartData', JSON.stringify({ data: updatedData }));
+    }
+  }, []);
+  function handleBarClick(data: ChartDataItem, type: 'success' | 'await') {
+    if (data[type] === 0) return; // ถ้าค่าของ success หรือ await เป็น 0 ไม่ต้องส่ง
+    localStorage.setItem(
+      'selectedBar',
+      JSON.stringify({ category: data.title, type })
+    );
+    window.dispatchEvent(new Event('storage')); // แจ้งเตือน TableStats ให้โหลดข้อมูลใหม่
   }
+  if (loading) return <div>Loading chart...</div>;
 
   return (
     <Card>
       <CardHeader>
-        <CardTitle>Horizontal Stacked Bar Chart - Legend</CardTitle>
-        <CardDescription>Period : January - June 2024</CardDescription>
+        <CardTitle>Bar Chart</CardTitle>
+        <CardDescription>Period : {dateRange ?? 'All'}</CardDescription>
       </CardHeader>
       <CardContent>
         <ChartContainer config={chartConfig}>
@@ -140,14 +133,16 @@ export function BarGraph() {
               stackId='a'
               fill='var(--color-success)'
               shape={<CustomBarShape />}
-              onClick={(data, index) => handleBarClick(data, index, 'success')}
+              onClick={(_, index) =>
+                handleBarClick(chartData[index], 'success')
+              }
             />
             <Bar
               dataKey='await'
               stackId='a'
               fill='var(--color-await)'
               radius={[0, 9, 9, 0]}
-              onClick={(data, index) => handleBarClick(data, index, 'await')}
+              onClick={(_, index) => handleBarClick(chartData[index], 'await')}
             />
           </BarChart>
         </ChartContainer>

@@ -82,7 +82,8 @@ const authConfig = {
       return token;
     }
   },
-  debug: false
+  debug: false,
+  trustHost: true
 } satisfies NextAuthConfig;
 
 export default authConfig;

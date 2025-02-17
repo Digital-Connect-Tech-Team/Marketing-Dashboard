@@ -13,7 +13,8 @@ export async function GET(request: Request) {
 
     const column = status === 'main' ? 'S' : 'T';
 
-    let whereClause = `WHERE ${column} IS NOT NULL AND ${column} != ''`;
+    // let whereClause = `WHERE ${column} IS NOT NULL AND ${column} != ''`;
+    let whereClause = `WHERE S IS NOT NULL AND S = 'ร้านค้าออนไลน์ (Online Store)'`;
 
     const rawData: any[] = await prisma.$queryRawUnsafe(`
             SELECT DISTINCT ${column} AS name

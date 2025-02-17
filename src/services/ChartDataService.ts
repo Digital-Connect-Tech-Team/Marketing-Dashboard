@@ -13,7 +13,7 @@ export type ResTableItem = {
 };
 
 export class ChartService {
-  private static BASE_URL = 'http://localhost:3000/api/';
+  private static BASE_URL = process.env.NEXTAUTH_URL || 'http://localhost:3000';
 
   // ✅ ฟังก์ชันช่วยสร้าง URL พร้อมพารามิเตอร์
   private static buildUrl(
@@ -171,7 +171,7 @@ export class ChartService {
         }
       }
 
-      const url = new URL('http://localhost:3000/api/lead');
+      const url = new URL(`${this.BASE_URL}/api/lead`);
       url.searchParams.append('status', status);
       url.searchParams.append('page', page.toString());
       url.searchParams.append('pageSize', pageSize.toString());
@@ -253,7 +253,7 @@ export class ChartService {
           throw new Error(`Invalid type: ${type}`);
       }
 
-      const url = new URL('http://localhost:3000/api/lead');
+      const url = new URL(`${this.BASE_URL}/api/lead`);
       url.searchParams.append('status', status);
       url.searchParams.append('page', page.toString());
       url.searchParams.append('pageSize', pageSize.toString());

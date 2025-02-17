@@ -43,7 +43,7 @@ export async function GET(request: Request) {
 
     const offset =
       (parseInt(params.page, 10) - 1) * parseInt(params.pageSize, 10);
-    let whereClause = `WHERE F IS NOT NULL`;
+    let whereClause = `WHERE F IS NOT NULL AND S = 'ร้านค้าออนไลน์ (Online Store)'`;
 
     if (fromDate && toDate) {
       whereClause += ` AND Q BETWEEN '${fromDate}' AND '${toDate}'`;

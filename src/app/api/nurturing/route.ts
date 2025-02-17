@@ -15,7 +15,7 @@ export async function GET(request: Request) {
     const offset = (page - 1) * pageSize;
 
     // 🔍 เงื่อนไขการค้นหา (SQL WHERE)
-    let whereClause = `WHERE F IS NOT NULL AND Z = 'สำรวจแล้ว' AND AI IS NOT NULL`;
+    let whereClause = `WHERE F IS NOT NULL AND Z = 'สำรวจแล้ว' AND AI IS NOT NULL AND S = 'ร้านค้าออนไลน์ (Online Store)'`;
 
     // ✅ กำหนดเงื่อนไขจาก `status`
     switch (status) {

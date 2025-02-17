@@ -1,6 +1,6 @@
 import NextAuth from 'next-auth';
 import authConfig from './auth.config';
-import bcrypt from 'bcrypt';
+import bcrypt from 'bcryptjs';
 
 export async function hashPassword(password: string): Promise<string> {
   const saltRounds = 10;

@@ -46,6 +46,10 @@ export const columns: ColumnDef<Payment>[] = [
     header: 'Name'
   },
   {
+    accessorKey: 'phoneNumber',
+    header: 'Phone Number'
+  },
+  {
     accessorKey: 'mainChannel',
     header: 'Main Channel'
   },

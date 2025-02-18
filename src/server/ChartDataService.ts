@@ -24,7 +24,6 @@ class ChartService {
     to?: Date,
     filters?: { mainChannel?: string; subChannel?: string; salePerson?: string }
   ) {
-    console.log('NEXTAUTH_URL :', process.env.NEXT_PUBLIC_URL_API);
     const url = new URL(endpoint, this.BASE_URL);
     const params = url.searchParams;
 
@@ -174,7 +173,7 @@ class ChartService {
         }
       }
 
-      const url = new URL('http://localhost:3000/api/lead');
+      const url = new URL(`${this.BASE_URL}/lead`);
       url.searchParams.append('status', status);
       url.searchParams.append('page', page.toString());
       url.searchParams.append('pageSize', pageSize.toString());
@@ -256,7 +255,7 @@ class ChartService {
           throw new Error(`Invalid type: ${type}`);
       }
 
-      const url = new URL('http://localhost:3000/api/lead');
+      const url = new URL(`${this.BASE_URL}/lead`);
       url.searchParams.append('status', status);
       url.searchParams.append('page', page.toString());
       url.searchParams.append('pageSize', pageSize.toString());

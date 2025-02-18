@@ -10,7 +10,7 @@ import { useFetchUsers } from '@/hooks/useFetchUsers';
 import { useFetchChannels } from '@/hooks/useFetchChannels';
 import { useQueryClient } from '@tanstack/react-query';
 import { DateRange } from 'react-day-picker';
-import { ChartService } from '@/services/ChartDataService';
+import ChartService from '@/server/ChartDataService';
 
 export default function OverViewLayout({
   bar_stats,

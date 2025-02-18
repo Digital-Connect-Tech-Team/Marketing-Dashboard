@@ -3,7 +3,7 @@
 import { useState, useEffect, useMemo } from 'react';
 import { columns } from '@/app/dashboard/overview/@table_stats/columns';
 import { DataTable } from '@/app/dashboard/overview/@table_stats/data-table';
-import { ChartService } from '@/services/ChartDataService';
+import ChartService from '@/server/ChartDataService';
 import { Badge } from '@/components/ui/badge';
 import { CardWinLoss } from './CardWinLoss';
 

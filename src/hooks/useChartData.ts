@@ -1,6 +1,6 @@
 import { useState, useEffect } from 'react';
 import { useQuery, useQueryClient } from '@tanstack/react-query';
-import { ChartService, ChartDataItem } from '@/services/ChartDataService';
+import ChartService, { ChartDataItem } from '@/server/ChartDataService';
 
 export function useChartData(
   from?: Date,

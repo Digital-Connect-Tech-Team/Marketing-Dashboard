@@ -1,3 +1,4 @@
+// "use server";
 export type ChartDataItem = {
   title: string;
   success: number;
@@ -12,10 +13,9 @@ export type ResTableItem = {
   total: string;
 };
 
-export class ChartService {
-  private static BASE_URL = 'http://localhost:3000/api/';
-
-  //  private static BASE_URL = process.env.NEXTAUTH_URL || 'http://localhost:3000';
+class ChartService {
+  private static BASE_URL =
+    process.env.NEXT_PUBLIC_URL_API || 'http://localhost:3000/api/';
 
   // ✅ ฟังก์ชันช่วยสร้าง URL พร้อมพารามิเตอร์
   private static buildUrl(
@@ -24,6 +24,7 @@ export class ChartService {
     to?: Date,
     filters?: { mainChannel?: string; subChannel?: string; salePerson?: string }
   ) {
+    console.log('NEXTAUTH_URL :', process.env.NEXT_PUBLIC_URL_API);
     const url = new URL(endpoint, this.BASE_URL);
     const params = url.searchParams;
 
@@ -282,3 +283,5 @@ export class ChartService {
     }
   }
 }
+
+export default ChartService;

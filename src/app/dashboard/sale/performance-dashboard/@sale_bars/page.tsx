@@ -102,10 +102,10 @@ export default function SaleBarChart() {
   useEffect(() => {
     if (dateRange?.from || dateRange?.to) {
       if (!dateRange?.to) {
-        setPeriod(`${format(dateRange.from, 'MMM d, yyyy')}`);
+        setPeriod(`${format(dateRange.from ?? new Date(), 'MMM d, yyyy')}`);
       } else {
         setPeriod(
-          `${format(dateRange.from, 'MMM d, yyyy')} to ${format(dateRange?.to, 'MMM d, yyyy')}`
+          `${format(dateRange.from ?? new Date(), 'MMM d, yyyy')} to ${format(dateRange?.to, 'MMM d, yyyy')}`
         );
       }
     } else if (selectedMonthYear.months.length > 0) {

@@ -6,13 +6,11 @@ import authOptions from '@/lib/auth.config';
 export async function GET(request: Request) {
   try {
     const session = await getServerSession(authOptions);
-
     if (!session || !('user' in session) || !session.user) {
       return NextResponse.json({ error: 'Unauthorized' }, { status: 401 });
     }
 
     const userId = (session.user as { id: number }).id;
-    console.log('session : ', session.user);
 
     const { searchParams } = new URL(request.url);
     const page = parseInt(searchParams.get('page') || '1', 10);

@@ -12,6 +12,7 @@ import {
   SelectValue
 } from '@/components/ui/select';
 import DateRangePicker from '@/features/sale/components/date-picker';
+import ChannelSelect from '@/features/sale/components/chanel-selector';
 export default async function OverViewLayout({
   card_totals,
   sale_bars
@@ -45,52 +46,11 @@ export default async function OverViewLayout({
           <div className='flex flex-row gap-4 py-2'>
             <DateRangePicker initialData={[]} />
 
-            <Select>
-              <SelectTrigger className='w-full'>
-                <SelectValue placeholder='Chanel' />
-              </SelectTrigger>
-              <SelectContent>
-                <SelectGroup>
-                  <SelectLabel>Fruits</SelectLabel>
-                  <SelectItem value='apple'>Apple</SelectItem>
-                  <SelectItem value='banana'>Banana</SelectItem>
-                  <SelectItem value='blueberry'>Blueberry</SelectItem>
-                  <SelectItem value='grapes'>Grapes</SelectItem>
-                  <SelectItem value='pineapple'>Pineapple</SelectItem>
-                </SelectGroup>
-              </SelectContent>
-            </Select>
-            <Select>
-              <SelectTrigger className='w-full'>
-                <SelectValue placeholder='Sub Chanel' />
-              </SelectTrigger>
-              <SelectContent>
-                <SelectGroup>
-                  <SelectLabel>Fruits</SelectLabel>
-                  <SelectItem value='apple'>Apple</SelectItem>
-                  <SelectItem value='banana'>Banana</SelectItem>
-                  <SelectItem value='blueberry'>Blueberry</SelectItem>
-                  <SelectItem value='grapes'>Grapes</SelectItem>
-                  <SelectItem value='pineapple'>Pineapple</SelectItem>
-                </SelectGroup>
-              </SelectContent>
-            </Select>
+            <ChannelSelect type='main' />
 
-            <Select>
-              <SelectTrigger className='w-full'>
-                <SelectValue placeholder='Sale' />
-              </SelectTrigger>
-              <SelectContent>
-                <SelectGroup>
-                  <SelectLabel>Fruits</SelectLabel>
-                  <SelectItem value='apple'>Apple</SelectItem>
-                  <SelectItem value='banana'>Banana</SelectItem>
-                  <SelectItem value='blueberry'>Blueberry</SelectItem>
-                  <SelectItem value='grapes'>Grapes</SelectItem>
-                  <SelectItem value='pineapple'>Pineapple</SelectItem>
-                </SelectGroup>
-              </SelectContent>
-            </Select>
+            <ChannelSelect type='sub' />
+
+            <ChannelSelect type='sale' />
 
             <Button>Reset</Button>
           </div>

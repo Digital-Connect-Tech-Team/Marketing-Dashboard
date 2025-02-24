@@ -9,10 +9,11 @@ datasource db {
 }
 
 model domain {
-  id   Int     @id @default(autoincrement())
-  name String
-  logo String?
-  user user[]
+  id          Int     @id @default(autoincrement())
+  name        String
+  main_chanel String?
+  logo        String?
+  user        user[]
 }
 
 model user {
@@ -47,11 +48,27 @@ model profile {
 }
 
 model role {
-  id        Int      @id @default(autoincrement())
-  name      String   @unique
-  createdAt DateTime @default(now())
-  updatedAt DateTime @updatedAt
-  users     user[]
+  id          Int               @id @default(autoincrement())
+  name        String            @unique
+  createdAt   DateTime          @default(now())
+  updatedAt   DateTime          @updatedAt
+  users       user[]
+  permissions role_permission[]
+}
+
+model permission {
+  id              String            @id @default(uuid())
+  name            String            @unique
+  role_permission role_permission[]
+}
+
+model role_permission {
+  roleId       Int 
+  permissionId String
+  role         role       @relation(fields: [roleId], references: [id], onDelete: Cascade)
+  permission   permission @relation(fields: [permissionId], references: [id], onDelete: Cascade)
+
+  @@id([roleId, permissionId])
 }
 
 /// The underlying table does not contain a valid unique identifier and can therefore currently not be handled by Prisma Client.

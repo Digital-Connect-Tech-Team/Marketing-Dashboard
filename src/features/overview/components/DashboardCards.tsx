@@ -18,7 +18,7 @@ export default function DashboardCards({
   ];
 
   return (
-    <div className='grid gap-4 md:grid-cols-2 lg:grid-cols-4'>
+    <div className='grid gap-4 md:grid-cols-5 lg:grid-cols-5'>
       {titles.map((title, index) => (
         <Card key={index}>
           <CardHeader className='flex justify-between pb-2'>

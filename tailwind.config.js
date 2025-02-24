@@ -18,6 +18,10 @@ module.exports = {
       }
     },
     extend: {
+      fontFamily: {
+        en: ['LufgaRegular', 'sans-serif'],
+        th: ['NotoSansThai-Regular', 'sans-serif']
+      },
       colors: {
         border: 'hsl(var(--border))',
         input: 'hsl(var(--input))',
@@ -25,12 +29,20 @@ module.exports = {
         background: 'hsl(var(--background))',
         foreground: 'hsl(var(--foreground))',
         primary: {
-          DEFAULT: 'hsl(var(--primary))',
-          foreground: 'hsl(var(--primary-foreground))'
+          DEFAULT: 'hsl(var(--onnex-cobalt-blue))',
+          foreground: 'hsl(var(--onnex-white))'
         },
         secondary: {
-          DEFAULT: 'hsl(var(--secondary))',
-          foreground: 'hsl(var(--secondary-foreground))'
+          DEFAULT: 'hsl(var(--onnex-gray))',
+          foreground: 'hsl(var(--onnex-white))'
+        },
+        danger: {
+          DEFAULT: 'hsl(var(--onnex-red))',
+          foreground: 'hsl(var(--onnex-white))'
+        },
+        success: {
+          DEFAULT: 'hsl(var(--onnex-green))',
+          foreground: 'hsl(var(--onnex-white))'
         },
         destructive: {
           DEFAULT: 'hsl(var(--destructive))',

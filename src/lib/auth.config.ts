@@ -58,19 +58,6 @@ const authConfig = {
     maxAge: 60 * 60 * 24
   },
   callbacks: {
-    async session({ session, token }) {
-      if (token) {
-        session.user = {
-          id: token.id as string,
-          email: token.email as string,
-          username: token.username as string,
-          role: token.role as Role,
-          domain: token.domain as Domain,
-          emailVerified: null
-        };
-      }
-      return session;
-    },
     async jwt({ token, user }) {
       if (user) {
         token.id = user.id;
@@ -80,6 +67,26 @@ const authConfig = {
         token.domain = user.domain;
       }
       return token;
+    },
+    async session({ session, token }) {
+      // session.user = {
+      //   id: token.id as string,
+      //   email: token.email as string,
+      //   username: token.username as string,
+      //   role: token.role as Role,
+      //   domain: token.domain as Domain,
+      //   emailVerified: null
+      // };
+
+      session.user = {
+        id: String(token.id),
+        email: token.email ?? '',
+        username: token.username as string,
+        role: token.role as Role,
+        domain: token.domain as Domain,
+        emailVerified: null
+      };
+      return session;
     }
   },
   debug: false,

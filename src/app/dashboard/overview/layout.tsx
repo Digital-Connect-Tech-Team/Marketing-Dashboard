@@ -161,7 +161,7 @@ export default function OverViewLayout({
           Sale Performance Dashboard
         </h2>
         <h2 className='text-1xl font-bold tracking-tight'>
-          Products: SCG Solar Roof Solution (OB)
+          Product : SCG Solar Roof Solution I OB : Own build
         </h2>
 
         <DashboardCards data={chartData ?? []} isLoading={isLoading} />

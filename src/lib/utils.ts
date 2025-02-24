@@ -24,3 +24,36 @@ export function formatBytes(
       : (sizes[i] ?? 'Bytes')
   }`;
 }
+
+export function convertToExcelSerial(
+  isoDate: string,
+  force1904: boolean = false
+): number {
+  if (!isoDate) return 0; // ป้องกันค่าที่ว่างเปล่า
+
+  const date = new Date(isoDate);
+  if (isNaN(date.getTime())) return 0;
+
+  const usDateString = date.toLocaleDateString('en-US');
+
+  const excelEpoch = force1904
+    ? new Date(Date.UTC(1904, 0, 1))
+    : new Date(Date.UTC(1899, 11, 30));
+  const diffTime = date.getTime() - excelEpoch.getTime();
+
+  return Math.floor(diffTime / 86400000) + (force1904 ? 0 : 1);
+}
+
+export function convertFromExcelSerial(serial: number): string {
+  const is1904 = serial >= 1462;
+
+  const excelEpoch = is1904
+    ? new Date(Date.UTC(1904, 0, 1))
+    : new Date(Date.UTC(1899, 11, 30));
+  const adjustedSerial = is1904 ? serial : serial - 1;
+  const convertedDate = new Date(
+    excelEpoch.getTime() + adjustedSerial * 86400000
+  );
+
+  return convertedDate.toISOString().split('T')[0];
+}

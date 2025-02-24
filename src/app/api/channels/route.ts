@@ -1,11 +1,20 @@
 import { NextResponse } from 'next/server';
 import { prisma } from '@/lib/prisma';
-import { SaleRes } from '@/interfaces/sale';
+import getServerSession from 'next-auth';
+import authOptions from '@/lib/auth.config';
 
 export async function GET(request: Request) {
   try {
-    const { searchParams } = new URL(request.url);
+    const session = await getServerSession(authOptions);
 
+    if (!session || !('user' in session) || !session.user) {
+      return NextResponse.json({ error: 'Unauthorized' }, { status: 401 });
+    }
+
+    const userId = (session.user as { id: number }).id;
+    console.log('session : ', session.user);
+
+    const { searchParams } = new URL(request.url);
     const page = parseInt(searchParams.get('page') || '1', 10);
     const pageSize = parseInt(searchParams.get('pageSize') || '10', 10);
     const search = searchParams.get('search')?.trim() || '';

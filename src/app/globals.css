@@ -37,6 +37,14 @@
     --sidebar-accent-foreground: 240 5.9% 10%;
     --sidebar-border: 220 13% 91%;
     --sidebar-ring: 217.2 91.2% 59.8%;
+    --onnex-cobalt-blue: 212 96% 32%;
+    --onnex-aqua-blue: 187 100% 42%;
+    --onnex-green: 150 69% 48%;
+    --onnex-purple: 242 47% 52%;
+    --onnex-gray: 185 5% 47%;
+    --onnex-red: 352 100% 42%;
+    --onnex-black: 0 0% 0%;
+    --onnex-white: 0 0% 100%;
   }
 
   .dark {
@@ -72,6 +80,14 @@
     --sidebar-accent-foreground: 240 4.8% 95.9%;
     --sidebar-border: 240 3.7% 15.9%;
     --sidebar-ring: 253 91% 58%%;
+    --onnex-cobalt-blue: 212 96% 2%;
+    --onnex-aqua-blue: 187 100% 12%;
+    --onnex-green: 150 69% 18%;
+    --onnex-purple: 242 47% 22%;
+    --onnex-gray: 185 5% 17%;
+    --onnex-red: 352 100% 12%;
+    --onnex-black: 0 0% 0%;
+    --onnex-white: 0 0% 70%;
   }
 }
 
@@ -124,4 +140,34 @@
   body {
     @apply bg-background text-foreground;
   }
+}
+
+@font-face {
+  font-family: 'LufgaRegular';
+  src: url('/fonts/Lufga/LufgaRegular.ttf') format('truetype');
+  font-weight: normal;
+  font-style: normal;
+}
+
+@font-face {
+  font-family: 'NotoSansThai-Regular';
+  src: url('/fonts/NotoSansThai/NotoSansThai-Regular.ttf') format('truetype');
+  font-weight: normal;
+  font-style: normal;
+}
+
+:lang(en) {
+  font-family: 'LufgaRegular', sans-serif;
+}
+
+:lang(th) {
+  font-family: 'NotoSansThai-Regular', sans-serif;
+}
+
+.font-english {
+  font-family: 'LufgaRegular', sans-serif;
+}
+
+.font-thai {
+  font-family: 'NotoSansThai-Regular', sans-serif;
 }

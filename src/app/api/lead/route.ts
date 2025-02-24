@@ -1,29 +1,64 @@
 import { NextResponse } from 'next/server';
 import { prisma } from '@/lib/prisma';
 import { SaleRes } from '@/interfaces/sale';
+import { auth } from '@/lib/auth';
+import { convertToExcelSerial } from '@/lib/utils';
+import { FilterDate } from '@/interfaces/global';
+import jwt from 'jsonwebtoken';
 
-function convertToExcelSerial(isoDate: string): number {
-  if (isoDate != '') {
-    const date = new Date(isoDate);
-    const excelEpoch = new Date(Date.UTC(1899, 11, 30)); // 1899-12-30
-    const diffTime = date.getTime() - excelEpoch.getTime();
-    const excelSerial = Math.floor(diffTime / (1000 * 60 * 60 * 24));
-    return excelSerial;
-  }
-  return 0;
-}
+const SECRET_KEY = process.env.JWT_SECRET as string;
 
-function saveSearchParamsToLocalStorage(params: Record<string, string>) {
+async function getDataSalePerformance(filter: FilterDate) {}
+
+export async function POST(request: Request) {
   try {
-    localStorage.setItem('searchParams', JSON.stringify(params));
-    console.log('✅ searchParams saved:', params);
+    const { filters } = await request.json();
+
+    if (!filters || typeof filters !== 'object') {
+      console.error('❌ Invalid Filters:', filters);
+      return NextResponse.json(
+        { error: 'Filters missing or invalid' },
+        { status: 400 }
+      );
+    }
+
+    console.log('📡 Received filters:', filters);
+
+    // ✅ ดึงข้อมูลจากฐานข้อมูล
+    const data = await getDataSalePerformance(filters);
+
+    // return NextResponse.json({ data });
   } catch (error) {
-    console.error('❌ Failed to save searchParams to localStorage:', error);
+    console.error('❌ Error in API:', error);
+    return NextResponse.json(
+      { error: 'Internal Server Error' },
+      { status: 500 }
+    );
   }
 }
 
 export async function GET(request: Request) {
   try {
+    // let decoded: any = {};
+    // try {
+    //   decoded = jwt.verify(SECRET_KEY);
+    // } catch (error) {
+    //   console.error("❌ Error verifying token:", error);
+    //   return NextResponse.json({ error: "Invalid Token" }, { status: 401 });
+    // }
+
+    // console.log("📡 Received Filters:", decoded.filters);
+
+    // if(decoded.filters.type === 'date' && decoded.filters.from && decoded.filters.to){
+    //   const fromDate = convertToExcelSerial(decoded.filters.from);
+    //   const toDate = convertToExcelSerial(decoded.filters.to);
+    // }
+
+    // console.log("ssssss decoded.filters:" , decoded.filters);
+
+    const session = await auth();
+    const mainChannel = session?.user?.domain?.main_chanel;
+
     const { searchParams } = new URL(request.url);
 
     const params = {
@@ -43,7 +78,7 @@ export async function GET(request: Request) {
 
     const offset =
       (parseInt(params.page, 10) - 1) * parseInt(params.pageSize, 10);
-    let whereClause = `WHERE F IS NOT NULL AND S = 'ร้านค้าออนไลน์ (Online Store)'`;
+    let whereClause = `WHERE F IS NOT NULL AND S = '${mainChannel}'`;
 
     if (fromDate && toDate) {
       whereClause += ` AND Q BETWEEN '${fromDate}' AND '${toDate}'`;

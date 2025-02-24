@@ -1,4 +1,4 @@
-// "use server";
+import { convertToExcelSerial } from '@/lib/utils';
 export type ChartDataItem = {
   title: string;
   success: number;
@@ -11,6 +11,16 @@ export type ResTableItem = {
   main: string;
   sub: string;
   total: string;
+};
+
+export type FilterDate = {
+  type: string;
+  from?: Date;
+  to?: Date;
+  months?: [];
+  quarters?: [];
+  years?: [];
+  year?: string;
 };
 
 class ChartService {
@@ -36,31 +46,85 @@ class ChartService {
     return url.toString();
   }
 
-  // ✅ ฟังก์ชันช่วย fetch ข้อมูล
-  private static async fetchData(
-    endpoint: string,
-    from?: Date,
-    to?: Date,
-    filters?: { mainChannel?: string; subChannel?: string; salePerson?: string }
-  ) {
+  private static async getJwtToken(filters: any) {
     try {
-      const url = this.buildUrl(endpoint, from, to, filters);
-      const response = await fetch(url);
+      if (!filters || Object.keys(filters).length === 0) {
+        throw new Error('Invalid filters: Cannot be empty');
+      }
+
+      console.log('📡 Sending filters for JWT encoding:', filters);
+
+      const response = await fetch(`${this.BASE_URL}/encode-jwt`, {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ filters }) // ✅ ส่งเป็น Object ที่มี `filters`
+      });
+
+      if (!response.ok) {
+        const errorData = await response.json();
+        console.error('❌ JWT API Error:', errorData);
+        throw new Error('Failed to encode filters');
+      }
+
+      const { token } = await response.json();
+      return token;
+    } catch (error) {
+      console.error('❌ Error getting JWT Token:', error);
+      return null;
+    }
+  }
+
+  // ✅ ฟังก์ชันช่วย fetch ข้อมูล
+  private static async fetchData(endpoint: string, filters?: any) {
+    try {
+      const token = await this.getJwtToken(filters);
+      if (!token) throw new Error('JWT Token not available');
+
+      const response = await fetch(`${this.BASE_URL}/${endpoint}`, {
+        method: 'GET',
+        headers: {
+          Authorization: `Bearer ${token}`,
+          'Content-Type': 'application/json'
+        }
+      });
+
       if (!response.ok)
         throw new Error(`${response.status} ${response.statusText}`);
       return await response.json();
     } catch (error) {
       console.error(`❌ API Error (${endpoint}):`, error);
-      return { totalCount: 0 }; // Default ถ้า API ล้มเหลว
+      return { totalCount: 0 };
     }
   }
 
   static async fetchChartData(
-    from?: Date,
-    to?: Date,
+    filterDate?: FilterDate,
     filters?: { mainChannel?: string; subChannel?: string; salePerson?: string }
   ): Promise<ChartDataItem[]> {
-    console.log('📡 Fetching chart data with filters:', { from, to, filters });
+    console.log('📡 Fetching chart data with filters:', {
+      filterDate,
+      filters
+    });
+
+    console.log('server fromxxxx:', filterDate);
+
+    // if (filterDate) {
+    //   if (filterDate?.type === "date") {
+    //     const fromDate = convertToExcelSerial(filterDate?.from);
+    //     const toDate = convertToExcelSerial(filterDate?.to);
+
+    //     console.log("server date type from:", fromDate);
+    //     console.log("server date type to:", toDate);
+    //   }
+    // }
+
+    // ✅ Create Query Parameters
+    const queryParams = new URLSearchParams();
+    // if (from) queryParams.append('from', from.toISOString());
+    // if (to) queryParams.append('to', to.toISOString());
+    // if (filters?.mainChannel) queryParams.append('mainChannel', filters.mainChannel);
+    // if (filters?.subChannel) queryParams.append('subChannel', filters.subChannel);
+    // if (filters?.salePerson) queryParams.append('salePerson', filters.salePerson);
 
     const endpoints = [
       'lead?status=all',
@@ -68,9 +132,6 @@ class ChartService {
       'lead?status=not_surveyed',
       'lead?status=quotation',
       'lead?status=not_quotation',
-      // 'lead?status=nurturingHigh',
-      // 'lead?status=nurturingMedium',
-      // 'lead?status=nurturingLow',
       'lead?status=nurturingHML',
       'lead?status=nurturingOthers',
       'lead?status=nurturingWin',
@@ -79,7 +140,7 @@ class ChartService {
 
     // ✅ ใช้ `Promise.all` ดึงข้อมูลพร้อมกัน
     const results = await Promise.all(
-      endpoints.map((endpoint) => this.fetchData(endpoint, from, to, filters))
+      endpoints.map((endpoint) => this.fetchData(endpoint, filterDate))
     );
 
     console.log('📊 Raw API Response:', results);
@@ -97,11 +158,7 @@ class ChartService {
       { title: 'Lead Sales', success: dataMap[0], await: 0 },
       { title: 'Survey', success: dataMap[1], await: dataMap[2] },
       { title: 'Quotation', success: dataMap[3], await: dataMap[4] },
-      {
-        title: 'Nurturing',
-        success: dataMap[5],
-        await: dataMap[6]
-      },
+      { title: 'Nurturing', success: dataMap[5], await: dataMap[6] },
       { title: 'Win/Loss', success: dataMap[7], await: dataMap[8] }
     ];
   }

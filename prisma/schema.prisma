@@ -9,11 +9,11 @@ datasource db {
 }
 
 model domain {
-  id          Int     @id @default(autoincrement())
-  name        String
-  main_chanel String?
-  logo        String?
-  user        user[]
+  id           Int     @id @default(autoincrement())
+  name         String
+  main_channel String?
+  logo         String?
+  user         user[]
 }
 
 model user {
@@ -63,7 +63,7 @@ model permission {
 }
 
 model role_permission {
-  roleId       Int 
+  roleId       Int
   permissionId String
   role         role       @relation(fields: [roleId], references: [id], onDelete: Cascade)
   permission   permission @relation(fields: [permissionId], references: [id], onDelete: Cascade)

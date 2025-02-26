@@ -4,9 +4,6 @@ import { SaleRes } from '@/interfaces/sale';
 import { auth } from '@/lib/auth';
 import { convertToExcelSerial } from '@/lib/utils';
 import { FilterDate } from '@/interfaces/global';
-import jwt from 'jsonwebtoken';
-
-const SECRET_KEY = process.env.JWT_SECRET as string;
 
 async function getDataSalePerformance(filter: FilterDate) {}
 
@@ -22,9 +19,6 @@ export async function POST(request: Request) {
       );
     }
 
-    console.log('📡 Received filters:', filters);
-
-    // ✅ ดึงข้อมูลจากฐานข้อมูล
     const data = await getDataSalePerformance(filters);
 
     // return NextResponse.json({ data });
@@ -57,7 +51,7 @@ export async function GET(request: Request) {
     // console.log("ssssss decoded.filters:" , decoded.filters);
 
     const session = await auth();
-    const mainChannel = session?.user?.domain?.main_chanel;
+    const mainChannel = session?.user?.domain?.main_channel;
 
     const { searchParams } = new URL(request.url);
 

@@ -1,6 +1,7 @@
 import { create } from 'zustand';
 import ChartService from '@/server/ChartDataService';
 import { DateRange } from 'react-day-picker';
+import { FilterDate } from '@/interfaces/global';
 
 interface SelectedMonthYearType {
   months: string[];
@@ -31,7 +32,33 @@ interface SalePerformanceState {
   selectedYears: string[];
   toggleYearSelection: (year: string) => void;
 
+  selectedType: string;
+  setSelectedType: (type: string) => void;
+
   resetFilters: () => void;
+
+  selectedMainChannel: string[];
+  setSelectedMainChannel: (main: string[]) => void;
+
+  selectedSubChannel: string[];
+  setSelectedSubChannel: (sub: string[]) => void;
+
+  selectedSaleChannel: string[];
+  setSelectedSaleChannel: (sale: string[]) => void;
+
+  availableMainChannels: string[];
+  availableSubChannels: string[];
+  availableSales: string[];
+
+  fetchData: () => Promise<void>;
+
+  fetchSales: () => Promise<void>;
+
+  fetchChannels: () => Promise<void>;
+
+  resetChannel: (
+    type: 'all' | 'main' | 'sub' | 'sale' | ('main' | 'sub' | 'sale')[]
+  ) => void;
 }
 
 export const useSalePerformanceStore = create<SalePerformanceState>(
@@ -41,19 +68,44 @@ export const useSalePerformanceStore = create<SalePerformanceState>(
 
     refreshChartData: async () => {
       console.log('🔄 Fetching new chart data...');
+      const {
+        selectedType,
+        dateRange,
+        selectedMonthYear,
+        selectedQuarterYear,
+        selectedYears,
+        selectedMainChannel,
+        selectedSubChannel,
+        selectedSaleChannel
+      } = get();
+
+      const filters = {
+        type: selectedType,
+        from: dateRange?.from,
+        to: dateRange?.to,
+        year: selectedMonthYear.year ?? selectedQuarterYear.year,
+        months: selectedMonthYear.months ?? [],
+        quarters: selectedQuarterYear.quarters ?? [],
+        years: selectedYears ?? [],
+        mainChannels: selectedMainChannel ?? [],
+        subChannels: selectedSubChannel ?? [],
+        sales: selectedSaleChannel ?? []
+      };
       try {
         const response = await fetch('/api/lead/count', {
-          method: 'GET'
+          method: 'POST',
+          headers: { 'Content-Type': 'application/json' },
+          body: JSON.stringify({ filters: filters })
         });
-        if (!response.ok) {
-          console.error('Error fetching data:', response.statusText);
-          return;
-        }
+        if (!response.ok) throw new Error('Failed to fetch channels');
+
         const newChartData = await response.json();
         set({ chartData: newChartData });
       } catch (error) {
-        console.error('Error fetching chart data:', error);
+        console.error('❌ Error fetching channels:', error);
       }
+      get().fetchChannels();
+      get().fetchSales();
     },
 
     dateRange: { from: undefined, to: undefined },
@@ -97,6 +149,20 @@ export const useSalePerformanceStore = create<SalePerformanceState>(
           : [...state.selectedYears, year]
       })),
 
+    selectedType: 'date',
+    setSelectedType: (type) => set({ selectedType: type }),
+
+    selectedMainChannel: [],
+    setSelectedMainChannel: (mainArray) =>
+      set({ selectedMainChannel: mainArray }),
+
+    selectedSubChannel: [],
+    setSelectedSubChannel: (subArray) => set({ selectedSubChannel: subArray }),
+
+    selectedSaleChannel: [],
+    setSelectedSaleChannel: (saleArray) =>
+      set({ selectedSaleChannel: saleArray }),
+
     resetFilters: () =>
       set((state) => ({
         dateRange: undefined,
@@ -109,6 +175,166 @@ export const useSalePerformanceStore = create<SalePerformanceState>(
           year: new Date().getFullYear().toString()
         },
         selectedYears: []
-      }))
+      })),
+
+    resetChannel: (type) => {
+      set((state) => {
+        let newState = { ...state };
+
+        if (type === 'all') {
+          newState = {
+            ...newState,
+            selectedMainChannel: [],
+            selectedSubChannel: [],
+            selectedSaleChannel: []
+          };
+        } else if (Array.isArray(type)) {
+          if (type.includes('main')) newState.selectedMainChannel = [];
+          if (type.includes('sub')) newState.selectedSubChannel = [];
+          if (type.includes('sale')) newState.selectedSaleChannel = [];
+        } else {
+          if (type === 'main') newState.selectedMainChannel = [];
+          if (type === 'sub') newState.selectedSubChannel = [];
+          if (type === 'sale') newState.selectedSaleChannel = [];
+        }
+
+        return newState;
+      });
+
+      get().fetchChannels();
+      get().fetchSales();
+    },
+
+    fetchData: async () => {
+      const {
+        selectedType,
+        dateRange,
+        selectedMonthYear,
+        selectedQuarterYear,
+        selectedYears,
+        selectedMainChannel,
+        selectedSubChannel,
+        selectedSaleChannel
+      } = get();
+
+      const filters = {
+        type: selectedType,
+        from: dateRange?.from,
+        to: dateRange?.to,
+        year: selectedMonthYear.year ?? selectedQuarterYear.year,
+        months: selectedMonthYear.months ?? [],
+        quarters: selectedQuarterYear.quarters ?? [],
+        years: selectedYears ?? [],
+        mainChannels: selectedMainChannel ?? [],
+        subChannels: selectedSubChannel ?? [],
+        sales: selectedSaleChannel ?? []
+      };
+      try {
+        const response = await fetch('/api/lead/count', {
+          method: 'POST',
+          headers: { 'Content-Type': 'application/json' },
+          body: JSON.stringify({ filters: filters })
+        });
+        if (!response.ok) throw new Error('Failed to fetch channels');
+
+        const newChartData = await response.json();
+        set({ chartData: newChartData });
+      } catch (error) {
+        console.error('❌ Error fetching channels:', error);
+      }
+      get().fetchChannels();
+      get().fetchSales();
+    },
+
+    availableMainChannels: [],
+    availableSubChannels: [],
+    fetchChannels: async () => {
+      const {
+        selectedType,
+        dateRange,
+        selectedMonthYear,
+        selectedQuarterYear,
+        selectedYears,
+        selectedMainChannel,
+        selectedSubChannel,
+        selectedSaleChannel
+      } = get();
+
+      const filters = {
+        type: selectedType,
+        from: dateRange?.from,
+        to: dateRange?.to,
+        year: selectedMonthYear.year ?? selectedQuarterYear.year,
+        months: selectedMonthYear.months ?? [],
+        quarters: selectedQuarterYear.quarters ?? [],
+        years: selectedYears ?? [],
+        mainChannels: selectedMainChannel ?? [],
+        subChannels: selectedSubChannel ?? [],
+        sales: selectedSaleChannel ?? []
+      };
+      try {
+        const response = await fetch('/api/channels', {
+          method: 'POST',
+          headers: { 'Content-Type': 'application/json' },
+          body: JSON.stringify({ filters })
+        });
+        if (!response.ok) throw new Error('Failed to fetch channels');
+
+        const data = await response.json();
+        console.log(data);
+
+        const mainChannels = Array.isArray(data.main) ? data.main : [];
+        const subChannels = Array.isArray(data.sub) ? data.sub : [];
+
+        set({
+          availableMainChannels: mainChannels,
+          availableSubChannels: subChannels
+        });
+      } catch (error) {
+        console.error('❌ Error fetching channels:', error);
+      }
+    },
+
+    availableSales: [],
+    fetchSales: async () => {
+      const {
+        selectedType,
+        dateRange,
+        selectedMonthYear,
+        selectedQuarterYear,
+        selectedYears,
+        selectedMainChannel,
+        selectedSubChannel,
+        selectedSaleChannel
+      } = get();
+
+      const filters = {
+        type: selectedType,
+        from: dateRange?.from,
+        to: dateRange?.to,
+        year: selectedMonthYear.year ?? selectedQuarterYear.year,
+        months: selectedMonthYear.months ?? [],
+        quarters: selectedQuarterYear.quarters ?? [],
+        years: selectedYears ?? [],
+        mainChannels: selectedMainChannel ?? [],
+        subChannels: selectedSubChannel ?? [],
+        sales: selectedSaleChannel ?? []
+      };
+
+      try {
+        const response = await fetch('/api/sales', {
+          method: 'POST',
+          headers: { 'Content-Type': 'application/json' },
+          body: JSON.stringify({ filters })
+        });
+
+        if (!response.ok) throw new Error('Failed to fetch sales');
+
+        const salesData = await response.json();
+        set({ availableSales: salesData });
+      } catch (error) {
+        console.error('❌ Error fetching sales:', error);
+      }
+    }
   })
 );

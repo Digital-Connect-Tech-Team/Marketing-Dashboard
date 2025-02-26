@@ -1,18 +1,8 @@
 import PageContainer from '@/components/layout/page-container';
 import React from 'react';
 import { Button } from '@/components/ui/button';
-import { SalePerformanceData } from '@/app/contexts/SalePerformanceContext';
-import {
-  Select,
-  SelectContent,
-  SelectGroup,
-  SelectItem,
-  SelectLabel,
-  SelectTrigger,
-  SelectValue
-} from '@/components/ui/select';
 import DateRangePicker from '@/features/sale/components/date-picker';
-import ChannelSelect from '@/features/sale/components/chanel-selector';
+import ChannelSelect from '@/features/sale/components/channel-selector';
 export default async function OverViewLayout({
   card_totals,
   sale_bars
@@ -39,27 +29,23 @@ export default async function OverViewLayout({
           Product : SCG Solar Roof Solution I OB : Own build
         </h2>
 
-        {/* ✅ ครอบ DatePickerProvider ให้สามารถใช้ Context ได้ */}
+        <div className='col-span-4'>{card_totals}</div>
+        <div className='flex flex-row gap-4 py-2'>
+          <DateRangePicker initialData={[]} />
 
-        <SalePerformanceData>
-          <div className='col-span-4'>{card_totals}</div>
-          <div className='flex flex-row gap-4 py-2'>
-            <DateRangePicker initialData={[]} />
+          <ChannelSelect type='main' />
 
-            <ChannelSelect type='main' />
+          <ChannelSelect type='sub' />
 
-            <ChannelSelect type='sub' />
+          <ChannelSelect type='sale' />
 
-            <ChannelSelect type='sale' />
+          <Button>Reset</Button>
+        </div>
 
-            <Button>Reset</Button>
-          </div>
-
-          <div className='grid grid-cols-1 gap-4 md:grid-cols-2 lg:grid-cols-8'>
-            <div className='col-span-4'>{sale_bars}</div>
-            <div className='col-span-4'></div>
-          </div>
-        </SalePerformanceData>
+        <div className='grid grid-cols-1 gap-4 md:grid-cols-2 lg:grid-cols-8'>
+          <div className='col-span-4'>{sale_bars}</div>
+          <div className='col-span-4'></div>
+        </div>
       </div>
     </PageContainer>
   );

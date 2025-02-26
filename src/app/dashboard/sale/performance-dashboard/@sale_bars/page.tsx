@@ -90,11 +90,6 @@ export default function SaleBarChart() {
   const [clientTime, setClientTime] = useState('');
   const [period, setPeriod] = useState('All');
 
-  console.log(dateRange);
-  console.log(selectedMonthYear);
-  console.log(selectedYears);
-  console.log(selectedQuarterYear);
-
   useEffect(() => {
     setClientTime(new Date().toLocaleString());
   }, []);

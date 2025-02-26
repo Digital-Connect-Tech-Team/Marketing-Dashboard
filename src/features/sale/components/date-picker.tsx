@@ -5,33 +5,34 @@ import {
   PopoverTrigger,
   PopoverContent
 } from '@/components/ui/popover';
-import React, { useEffect, useState } from 'react';
+import React, { useEffect, useMemo, useState } from 'react';
 import { Button } from '@/components/ui/button';
 import { Calendar } from '@/components/ui/calendar';
 import { format } from 'date-fns';
-import { cn } from '@/lib/utils';
 import { Calendar as CalendarIcon } from 'lucide-react';
 import { useSalePerformanceStore } from '@/app/contexts/useSalePerformanceStore';
 import MonthSelector from './month-selector';
 import YearSelector from './year-selector';
 import QuarterSelector from './quarter-selector';
-import ChartService from '@/server/ChartDataService';
-import { useSaleChartData } from '@/hooks/use-sale-performance';
+import { useSession } from 'next-auth/react';
 
 export default function DateRangePicker({ initialData }: { initialData: any }) {
+  const { data: session } = useSession();
   const {
     dateRange,
     setDateRange,
     selectedMonthYear,
     selectedQuarterYear,
     selectedYears,
+    selectedType,
+    setSelectedType,
     resetFilters,
+    refreshChartData,
+    resetChannel,
     setChartData
   } = useSalePerformanceStore();
 
-  const [selected, setSelected] = useState('date');
   const [open, setOpen] = useState(false);
-  const [formattedDate, setFormattedDate] = useState('Period Range');
 
   const monthOrder = [
     'Jan',
@@ -48,29 +49,39 @@ export default function DateRangePicker({ initialData }: { initialData: any }) {
     'Dec'
   ];
 
-  const filterParams = {
-    type: selected,
-    from: dateRange?.from || null,
-    to: dateRange?.to || null,
-    months: selectedMonthYear?.months.length ? selectedMonthYear.months : null,
-    year: selectedMonthYear?.year || selectedQuarterYear?.year || null,
-    quarters: selectedQuarterYear?.quarters.length
-      ? selectedQuarterYear.quarters
-      : null,
-    years: selectedYears.length ? selectedYears : null
-  };
-
-  // const { data, isLoading, isError } = useSaleChartData(filterParams);
-
   useEffect(() => {
     if (initialData) {
       setChartData(initialData);
     }
   }, [initialData, setChartData]);
 
+  const formattedDate = useMemo(() => {
+    if (selectedType === 'date' && dateRange?.from) {
+      return dateRange.to
+        ? `${format(dateRange.from, 'MMM d, yyyy')} to ${format(dateRange.to, 'MMM d, yyyy')}`
+        : format(dateRange.from, 'MMM d, yyyy');
+    }
+    if (selectedType === 'month' && selectedMonthYear.months.length > 0) {
+      return `${selectedMonthYear.months.join(', ')}, ${selectedMonthYear.year}`;
+    }
+    if (selectedType === 'quarter' && selectedQuarterYear.quarters.length > 0) {
+      return `${selectedQuarterYear.quarters.join(', ')}, ${selectedQuarterYear.year}`;
+    }
+    if (selectedType === 'year' && selectedYears.length > 0) {
+      return selectedYears.join(', ');
+    }
+    return 'Period Range';
+  }, [
+    selectedType,
+    dateRange,
+    selectedMonthYear,
+    selectedQuarterYear,
+    selectedYears
+  ]);
+
   const setFilters = async () => {
     let filterParams: any = {
-      type: selected,
+      type: selectedType,
       from: dateRange?.from
         ? new Date(dateRange.from.setHours(0, 0, 0, 0)).toISOString() // Convert to UTC
         : null,
@@ -87,51 +98,13 @@ export default function DateRangePicker({ initialData }: { initialData: any }) {
       years: selectedYears.length > 0 ? selectedYears : null
     };
 
-    console.log('📡 Sending Filters to Backend:', filterParams); // Debugging
-
-    if (selected === 'date' && dateRange?.from && !dateRange?.to) {
-      setFormattedDate(`${format(dateRange.from, 'MMM d, yyyy')}`);
-    } else if (selected === 'date' && dateRange?.from && dateRange?.to) {
-      setFormattedDate(
-        `${format(dateRange.from, 'MMM d, yyyy')} to ${format(dateRange.to, 'MMM d, yyyy')}`
-      );
-    } else if (selected === 'month' && selectedMonthYear.months.length > 0) {
-      const sortedMonths = [...selectedMonthYear.months].sort(
-        (a, b) => monthOrder.indexOf(a) - monthOrder.indexOf(b)
-      );
-      setFormattedDate(`${sortedMonths.join(', ')}, ${selectedMonthYear.year}`);
-    } else if (
-      selected === 'quarter' &&
-      selectedQuarterYear.quarters.length > 0
-    ) {
-      const sortedQuarters = [...selectedQuarterYear.quarters].sort();
-      setFormattedDate(
-        `${sortedQuarters.join(', ')}, ${selectedQuarterYear.year}`
-      );
-    } else if (selected === 'year' && selectedYears.length > 0) {
-      const sortedYears = [...selectedYears].sort(
-        (a, b) => parseInt(a) - parseInt(b)
-      );
-      setFormattedDate(sortedYears.join(', '));
-    }
-
     try {
-      const response = await fetch(`/api/lead/count`, {
-        method: 'POST',
-        headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify({ filters: filterParams })
-      });
-
-      if (!response.ok) {
-        const errorData = await response.json();
-        console.error('❌ API Error:', errorData);
-        throw new Error('Failed to fetch filtered data');
+      if (session?.user.role.name === 'Master') {
+        resetChannel('all');
+      } else {
+        resetChannel(['sub', 'sale']);
       }
-
-      const filteredData = await response.json();
-      console.log('✅ Fetched Filtered Data:', filteredData);
-
-      setChartData(filteredData);
+      refreshChartData();
     } catch (error) {
       console.error('❌ Error fetching filtered data:', error);
     }
@@ -156,45 +129,21 @@ export default function DateRangePicker({ initialData }: { initialData: any }) {
       >
         <div className='flex items-center justify-between gap-4 p-4'>
           <div className='mb-auto grid grid-cols-1 gap-2'>
-            <Button
-              variant={selected === 'date' ? 'default' : 'secondary'}
-              onClick={() => {
-                setSelected('date');
-                resetFilters();
-              }}
-            >
-              Date
-            </Button>
-            <Button
-              variant={selected === 'month' ? 'default' : 'secondary'}
-              onClick={() => {
-                setSelected('month');
-                resetFilters();
-              }}
-            >
-              Month
-            </Button>
-            <Button
-              variant={selected === 'quarter' ? 'default' : 'secondary'}
-              onClick={() => {
-                setSelected('quarter');
-                resetFilters();
-              }}
-            >
-              Quarter
-            </Button>
-            <Button
-              variant={selected === 'year' ? 'default' : 'secondary'}
-              onClick={() => {
-                setSelected('year');
-                resetFilters();
-              }}
-            >
-              Year
-            </Button>
+            {['date', 'month', 'quarter', 'year'].map((type) => (
+              <Button
+                key={type}
+                variant={selectedType === type ? 'default' : 'secondary'}
+                onClick={() => {
+                  setSelectedType(type);
+                  resetFilters();
+                }}
+              >
+                {type.charAt(0).toUpperCase() + type.slice(1)}
+              </Button>
+            ))}
           </div>
           <div className='rounded-md border bg-white p-4 shadow-lg dark:border-gray-700 dark:bg-neutral-900 dark:text-white'>
-            {selected === 'date' && (
+            {selectedType === 'date' && (
               <Calendar
                 mode='range'
                 selected={dateRange}
@@ -221,9 +170,9 @@ export default function DateRangePicker({ initialData }: { initialData: any }) {
                 }}
               />
             )}
-            {selected === 'month' && <MonthSelector />}
-            {selected === 'quarter' && <QuarterSelector />}
-            {selected === 'year' && <YearSelector />}
+            {selectedType === 'month' && <MonthSelector />}
+            {selectedType === 'quarter' && <QuarterSelector />}
+            {selectedType === 'year' && <YearSelector />}
           </div>
         </div>
         <div className='items-right gap gap-col-3 flex justify-end gap-4 px-4 pb-4'>
@@ -232,7 +181,6 @@ export default function DateRangePicker({ initialData }: { initialData: any }) {
             className='w-[140px]'
             onClick={() => {
               resetFilters();
-              setFormattedDate('Period Range');
             }}
           >
             Clear Selection

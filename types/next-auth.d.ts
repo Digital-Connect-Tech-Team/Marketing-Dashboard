@@ -28,7 +28,7 @@ declare module 'next-auth' {
     id: number;
     name: string;
     logo: string;
-    main_chanel: string;
+    main_channel: string;
   }
 
   interface JWT {

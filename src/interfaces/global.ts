@@ -16,4 +16,7 @@ export type FilterDate = {
   quarters?: string[];
   years?: string[];
   year?: string;
+  mainChannels?: string[];
+  subChannels?: string[];
+  sales?: string[];
 };

@@ -3,130 +3,21 @@ import { prisma } from '@/lib/prisma';
 import { SaleRes } from '@/interfaces/sale';
 import { auth } from '@/lib/auth';
 import { convertToExcelSerial } from '@/lib/utils';
+import { buildWhereClause } from '@/lib/build-where-clause';
 
 export async function POST(request: Request) {
   try {
     const session = await auth();
-    const mainChannelSession = session?.user?.domain?.main_chanel;
+    const mainChannelSession = session?.user?.domain?.main_channel;
     const { searchParams } = new URL(request.url);
-    // ดึงข้อมูล filter จาก request body
+
     const { filters } = await request.json();
 
-    // สร้างเงื่อนไข WHERE clause เริ่มต้น
-    let whereClause = `WHERE F IS NOT NULL`;
-
-    if (filters.type === 'date' && filters.from && !filters.to) {
-      console.log(filters.from);
-
-      const fromDate = convertToExcelSerial(filters.from);
-      whereClause += ` AND Q = '${fromDate}'`;
-    }
-
-    if (filters.type === 'date' && filters.from && filters.to) {
-      const fromDate = convertToExcelSerial(filters.from);
-      const toDate = convertToExcelSerial(filters.to);
-      whereClause += ` AND Q BETWEEN '${fromDate}' AND '${toDate}'`;
-    }
-
-    if (filters.type === 'month' && filters.months && filters.year) {
-      const monthMapping: Record<string, number> = {
-        Jan: 0,
-        Feb: 1,
-        Mar: 2,
-        Apr: 3,
-        May: 4,
-        Jun: 5,
-        Jul: 6,
-        Aug: 7,
-        Sep: 8,
-        Oct: 9,
-        Nov: 10,
-        Dec: 11
-      };
-
-      const conditions = filters.months.map((month: string) => {
-        const monthIndex = monthMapping[month];
-        const year = Number(filters.year);
-        const startDate = new Date(year, monthIndex, 1);
-        const endDate = new Date(year, monthIndex + 1, 0);
-        const startSerial = convertToExcelSerial(
-          startDate.toISOString().split('T')[0]
-        );
-        const endSerial = convertToExcelSerial(
-          endDate.toISOString().split('T')[0]
-        );
-        return `(Q BETWEEN '${startSerial}' AND '${endSerial}')`;
-      });
-
-      if (conditions.length > 0) {
-        whereClause += ` AND (${conditions.join(' OR ')})`;
-      }
-    }
-
-    console.log(filters);
-
-    if (filters.type === 'quarter' && filters.quarter && filters.year) {
-      const quarterMapping: Record<
-        string,
-        { startMonth: number; endMonth: number }
-      > = {
-        Q1: { startMonth: 0, endMonth: 2 }, // Jan - Mar
-        Q2: { startMonth: 3, endMonth: 5 }, // Apr - Jun
-        Q3: { startMonth: 6, endMonth: 8 }, // Jul - Sep
-        Q4: { startMonth: 9, endMonth: 11 } // Oct - Dec
-      };
-
-      // วนลูปหาช่วงวันสำหรับแต่ละไตรมาส
-      const conditions = filters.quarters.map((quarter: string) => {
-        const { startMonth, endMonth } = quarterMapping[quarter];
-        const year = Number(filters.year);
-        // วันที่เริ่มต้นของไตรมาส (วันแรกของเดือนเริ่มต้น)
-        const startDate = new Date(year, startMonth, 1);
-        // วันที่สิ้นสุดของไตรมาส (วันที่สุดท้ายของเดือนสิ้นสุด)
-        const endDate = new Date(year, endMonth + 1, 0);
-        // แปลงวันที่เป็น Excel serial โดยรับค่าในรูปแบบ 'yyyy-mm-dd'
-        const startSerial = convertToExcelSerial(
-          startDate.toISOString().split('T')[0]
-        );
-        const endSerial = convertToExcelSerial(
-          endDate.toISOString().split('T')[0]
-        );
-        return `(Q BETWEEN '${startSerial}' AND '${endSerial}')`;
-      });
-
-      if (conditions.length > 0) {
-        whereClause += ` AND (${conditions.join(' OR ')})`;
-      }
-    }
-
-    if (filters.type === 'year' && filters.years) {
-      const conditions = filters.years.map((yearStr: string) => {
-        const year = Number(yearStr);
-        // วันที่เริ่มต้นของปี (1 มกราคม)
-        const startDate = new Date(year, 0, 1);
-        // วันที่สิ้นสุดของปี (31 ธันวาคม)
-        const endDate = new Date(year, 11, 31);
-        // แปลงวันที่เป็น Excel serial (โดยใช้ฟังก์ชัน convertToExcelSerial)
-        const startSerial = convertToExcelSerial(
-          startDate.toISOString().split('T')[0]
-        );
-        const endSerial = convertToExcelSerial(
-          endDate.toISOString().split('T')[0]
-        );
-        return `(Q BETWEEN '${startSerial}' AND '${endSerial}')`;
-      });
-
-      if (conditions.length > 0) {
-        whereClause += ` AND (${conditions.join(' OR ')})`;
-      }
-    }
-
-    // สามารถเพิ่มเงื่อนไขอื่นๆ จาก filters ได้ เช่น mainChannel, months, quarters, years เป็นต้น
-    if (mainChannelSession) {
-      whereClause += ` AND S = '${mainChannelSession}'`;
-    }
-
-    console.log(whereClause);
+    const whereClause = buildWhereClause(
+      filters,
+      session,
+      mainChannelSession ?? ''
+    );
 
     const rawData: any[] = await prisma.$queryRawUnsafe(`
       WITH base AS (
@@ -150,7 +41,6 @@ export async function POST(request: Request) {
       FROM base;
     `);
 
-    // แปลงค่าที่เป็น BigInt ให้เป็น Number ก่อนส่ง response
     const result = [
       {
         title: 'Lead Sales',
@@ -196,7 +86,7 @@ export async function POST(request: Request) {
 export async function GET(request: Request) {
   try {
     const session = await auth();
-    const mainChannelSession = session?.user?.domain?.main_chanel;
+    const mainChannelSession = session?.user?.domain?.main_channel;
     const { searchParams } = new URL(request.url);
     const params = {
       page: parseInt(searchParams.get('page') || '1', 10),

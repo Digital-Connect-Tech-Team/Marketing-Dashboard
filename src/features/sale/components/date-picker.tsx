@@ -26,7 +26,7 @@ export default function DateRangePicker({ initialData }: { initialData: any }) {
     selectedYears,
     selectedType,
     setSelectedType,
-    resetFilters,
+    resetDateFilters,
     refreshChartData,
     resetChannel,
     setChartData
@@ -135,7 +135,7 @@ export default function DateRangePicker({ initialData }: { initialData: any }) {
                 variant={selectedType === type ? 'default' : 'secondary'}
                 onClick={() => {
                   setSelectedType(type);
-                  resetFilters();
+                  resetDateFilters();
                 }}
               >
                 {type.charAt(0).toUpperCase() + type.slice(1)}
@@ -180,7 +180,7 @@ export default function DateRangePicker({ initialData }: { initialData: any }) {
             variant='secondary'
             className='w-[140px]'
             onClick={() => {
-              resetFilters();
+              resetDateFilters();
             }}
           >
             Clear Selection

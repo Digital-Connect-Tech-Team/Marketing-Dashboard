@@ -67,12 +67,6 @@ export default function ChannelSelect({ type }: ChannelSelectProps) {
     fetchData();
   }, []);
 
-  // useEffect(() => {
-  //   console.log("selectedValues : ",selectedValues);
-  //   console.log("selectedSubChannel : " ,store.selectedSubChannel);
-  //   // setSelectedValues([])
-  // }, [store.chartData])
-
   useEffect(() => {
     if (type === 'main') {
       setSelectedValues(store.selectedMainChannel);

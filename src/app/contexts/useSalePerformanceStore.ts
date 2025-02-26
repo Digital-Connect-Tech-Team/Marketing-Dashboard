@@ -1,7 +1,5 @@
 import { create } from 'zustand';
-import ChartService from '@/server/ChartDataService';
 import { DateRange } from 'react-day-picker';
-import { FilterDate } from '@/interfaces/global';
 
 interface SelectedMonthYearType {
   months: string[];
@@ -35,7 +33,7 @@ interface SalePerformanceState {
   selectedType: string;
   setSelectedType: (type: string) => void;
 
-  resetFilters: () => void;
+  resetDateFilters: () => void;
 
   selectedMainChannel: string[];
   setSelectedMainChannel: (main: string[]) => void;
@@ -59,6 +57,8 @@ interface SalePerformanceState {
   resetChannel: (
     type: 'all' | 'main' | 'sub' | 'sale' | ('main' | 'sub' | 'sale')[]
   ) => void;
+
+  resetAllFilters: () => void;
 }
 
 export const useSalePerformanceStore = create<SalePerformanceState>(
@@ -163,7 +163,13 @@ export const useSalePerformanceStore = create<SalePerformanceState>(
     setSelectedSaleChannel: (saleArray) =>
       set({ selectedSaleChannel: saleArray }),
 
-    resetFilters: () =>
+    resetAllFilters: () => {
+      get().resetDateFilters();
+      get().resetChannel('all');
+      get().fetchData();
+    },
+
+    resetDateFilters: () =>
       set((state) => ({
         dateRange: undefined,
         selectedMonthYear: {

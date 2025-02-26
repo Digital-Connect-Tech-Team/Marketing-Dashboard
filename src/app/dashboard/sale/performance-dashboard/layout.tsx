@@ -3,6 +3,7 @@ import React from 'react';
 import { Button } from '@/components/ui/button';
 import DateRangePicker from '@/features/sale/components/date-picker';
 import ChannelSelect from '@/features/sale/components/channel-selector';
+import ResetFilterButton from '@/features/sale/components/reset-filter-buttoon';
 export default async function OverViewLayout({
   card_totals,
   sale_bars
@@ -39,7 +40,7 @@ export default async function OverViewLayout({
 
           <ChannelSelect type='sale' />
 
-          <Button>Reset</Button>
+          <ResetFilterButton />
         </div>
 
         <div className='grid grid-cols-1 gap-4 md:grid-cols-2 lg:grid-cols-8'>

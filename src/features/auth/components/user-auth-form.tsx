@@ -37,8 +37,8 @@ export default function UserAuthForm() {
   const callbackUrl = searchParams.get('callbackUrl');
   const [loading, startTransition] = useTransition();
   const defaultValues = {
-    email: 'master@example.com',
-    password: 'securepassword123'
+    email: '',
+    password: ''
   };
   const form = useForm<UserFormValue>({
     resolver: zodResolver(formSchema),

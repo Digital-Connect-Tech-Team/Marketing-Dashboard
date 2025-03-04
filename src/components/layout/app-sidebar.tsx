@@ -62,7 +62,7 @@ export default function AppSidebar() {
   return (
     <Sidebar collapsible='icon'>
       <SidebarHeader className='bg-primary'>
-        <div className='relative h-[100] w-[200] self-center'>
+        <div className='relative h-[100px] w-[200px] self-center'>
           <Image
             src='/images/logo/Onnex_Logo_white.png'
             alt='Logo'

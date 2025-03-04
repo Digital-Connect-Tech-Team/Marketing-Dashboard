@@ -18,7 +18,7 @@ export default async function OverViewLayout({
     <PageContainer>
       <div className='flex flex-1 flex-col space-y-2'>
         {/* Header */}
-        <div className='relative h-[100] w-[200]'>
+        <div className='relative mr-auto h-[100px] w-[200px]'>
           <Image
             src='/images/logo/Onnex_Logo.jpg'
             alt='Onnex Logo'

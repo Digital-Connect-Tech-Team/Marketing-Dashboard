@@ -96,8 +96,8 @@ export default function ChannelSelect({ type }: ChannelSelectProps) {
 
   const handleConfirm = async () => {
     channelMappings[type].setSelected(selectedValues);
-    setIsOpen(false);
 
+    setIsOpen(false);
     const filters = {
       type: store.selectedType,
       from: store.dateRange?.from,
@@ -111,6 +111,13 @@ export default function ChannelSelect({ type }: ChannelSelectProps) {
       subChannels: type === 'sub' ? selectedValues : store.selectedSubChannel,
       sales: type === 'sale' ? selectedValues : store.selectedSaleChannel
     };
+
+    if (type === 'main') {
+      store.setSelectedSubChannel([]);
+      store.setSelectedSaleChannel([]);
+    } else if (type === 'sub') {
+      store.setSelectedSaleChannel([]);
+    }
 
     try {
       store.refreshChartData();

@@ -1,5 +1,6 @@
 import { create } from 'zustand';
 import { DateRange } from 'react-day-picker';
+import { FetchTableResult } from '@/interfaces/sale';
 
 interface SelectedMonthYearType {
   months: string[];
@@ -48,11 +49,32 @@ interface SalePerformanceState {
   availableSubChannels: string[];
   availableSales: string[];
 
+  selectedBarBadge: string;
+  setSelectedBarBadge: (type: string) => void;
+
+  selectedBarCategory: string;
+  setSelectedBarCategory: (type: string) => void;
+
+  currentPage: number;
+  setCurrentPage: (page: number) => void;
+
+  pageSize: number;
+  setPageSize: (size: number) => void;
+
+  offset: number;
+  setOffset: (offset: number) => void;
+
+  fetchTable: () => Promise<FetchTableResult | undefined>;
+
   fetchData: () => Promise<void>;
 
   fetchSales: () => Promise<void>;
 
   fetchChannels: () => Promise<void>;
+
+  chartLoss: any;
+  setChartLoss: (data: any) => void;
+  fetchChartLoss: () => Promise<void>;
 
   resetChannel: (
     type: 'all' | 'main' | 'sub' | 'sale' | ('main' | 'sub' | 'sale')[]
@@ -108,6 +130,55 @@ export const useSalePerformanceStore = create<SalePerformanceState>(
       get().fetchSales();
     },
 
+    chartLoss: null,
+    setChartLoss: (data) => set({ chartLoss: data }),
+    fetchChartLoss: async () => {
+      const {
+        selectedType,
+        dateRange,
+        selectedMonthYear,
+        selectedQuarterYear,
+        selectedYears,
+        selectedMainChannel,
+        selectedSubChannel,
+        selectedBarCategory,
+        selectedBarBadge,
+        selectedSaleChannel,
+        offset,
+        pageSize
+      } = get();
+
+      const filters = {
+        type: selectedType,
+        from: dateRange?.from,
+        to: dateRange?.to,
+        year: selectedMonthYear.year ?? selectedQuarterYear.year,
+        months: selectedMonthYear.months ?? [],
+        quarters: selectedQuarterYear.quarters ?? [],
+        years: selectedYears ?? [],
+        mainChannels: selectedMainChannel ?? [],
+        subChannels: selectedSubChannel ?? [],
+        sales: selectedSaleChannel ?? [],
+        typeCategory: selectedBarCategory ?? '',
+        typeBadge: selectedBarBadge ?? '',
+        pageSize,
+        offset
+      };
+      try {
+        const response = await fetch('/api/lead/loss/count', {
+          method: 'POST',
+          headers: { 'Content-Type': 'application/json' },
+          body: JSON.stringify({ filters: filters })
+        });
+        if (!response.ok) throw new Error('Failed to fetch channels');
+
+        const newChartData = await response.json();
+        set({ chartLoss: newChartData });
+      } catch (error) {
+        console.error('❌ Error fetching channels:', error);
+      }
+    },
+
     dateRange: { from: undefined, to: undefined },
     setDateRange: (date) => set({ dateRange: date }),
 
@@ -152,6 +223,12 @@ export const useSalePerformanceStore = create<SalePerformanceState>(
     selectedType: 'date',
     setSelectedType: (type) => set({ selectedType: type }),
 
+    selectedBarBadge: '',
+    setSelectedBarBadge: (type) => set({ selectedBarBadge: type }),
+
+    selectedBarCategory: '',
+    setSelectedBarCategory: (type) => set({ selectedBarCategory: type }),
+
     selectedMainChannel: [],
     setSelectedMainChannel: (mainArray) =>
       set({ selectedMainChannel: mainArray }),
@@ -162,6 +239,19 @@ export const useSalePerformanceStore = create<SalePerformanceState>(
     selectedSaleChannel: [],
     setSelectedSaleChannel: (saleArray) =>
       set({ selectedSaleChannel: saleArray }),
+
+    currentPage: 1,
+    setCurrentPage: (page) => {
+      set({ currentPage: page, offset: (page - 1) * get().pageSize });
+    },
+
+    pageSize: 10,
+    setPageSize: (size) => {
+      set({ pageSize: size, offset: (get().currentPage - 1) * size });
+    },
+
+    offset: 0,
+    setOffset: (offset) => set({ offset: offset }),
 
     resetAllFilters: () => {
       get().resetDateFilters();
@@ -209,6 +299,57 @@ export const useSalePerformanceStore = create<SalePerformanceState>(
 
       get().fetchChannels();
       get().fetchSales();
+    },
+
+    fetchTable: async () => {
+      const {
+        selectedType,
+        dateRange,
+        selectedMonthYear,
+        selectedQuarterYear,
+        selectedYears,
+        selectedMainChannel,
+        selectedSubChannel,
+        selectedBarCategory,
+        selectedBarBadge,
+        selectedSaleChannel,
+        offset,
+        pageSize
+      } = get();
+
+      const filters = {
+        type: selectedType,
+        from: dateRange?.from,
+        to: dateRange?.to,
+        year: selectedMonthYear.year ?? selectedQuarterYear.year,
+        months: selectedMonthYear.months ?? [],
+        quarters: selectedQuarterYear.quarters ?? [],
+        years: selectedYears ?? [],
+        mainChannels: selectedMainChannel ?? [],
+        subChannels: selectedSubChannel ?? [],
+        sales: selectedSaleChannel ?? [],
+        typeCategory: selectedBarCategory ?? '',
+        typeBadge: selectedBarBadge ?? '',
+        pageSize,
+        offset
+      };
+      try {
+        const response = await fetch('/api/lead', {
+          method: 'POST',
+          headers: { 'Content-Type': 'application/json' },
+          body: JSON.stringify({ filters: filters })
+        });
+        if (!response.ok) throw new Error('Failed to fetch channels');
+
+        const result: FetchTableResult = await response.json();
+
+        if (!result || !Array.isArray(result.data)) {
+          throw new Error('Invalid data format');
+        }
+        return result;
+      } catch (error) {
+        console.error('❌ Error fetching channels:', error);
+      }
     },
 
     fetchData: async () => {
@@ -287,8 +428,6 @@ export const useSalePerformanceStore = create<SalePerformanceState>(
         if (!response.ok) throw new Error('Failed to fetch channels');
 
         const data = await response.json();
-        console.log(data);
-
         const mainChannels = Array.isArray(data.main) ? data.main : [];
         const subChannels = Array.isArray(data.sub) ? data.sub : [];
 

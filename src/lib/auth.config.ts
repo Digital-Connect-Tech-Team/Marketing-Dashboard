@@ -19,6 +19,7 @@ const authConfig = {
           where: { email: credentials?.email as string },
           select: {
             id: true,
+            name: true,
             username: true,
             email: true,
             password: true,
@@ -40,6 +41,7 @@ const authConfig = {
         return {
           id: user?.id,
           email: user?.email,
+          name: user?.name,
           username: user?.username,
           role: user?.role,
           domain: user?.domain
@@ -62,6 +64,7 @@ const authConfig = {
       if (user) {
         token.id = user.id;
         token.email = user.email;
+        token.name = user.name;
         token.username = user.username;
         token.role = user.role;
         token.domain = user.domain;
@@ -69,18 +72,10 @@ const authConfig = {
       return token;
     },
     async session({ session, token }) {
-      // session.user = {
-      //   id: token.id as string,
-      //   email: token.email as string,
-      //   username: token.username as string,
-      //   role: token.role as Role,
-      //   domain: token.domain as Domain,
-      //   emailVerified: null
-      // };
-
       session.user = {
         id: String(token.id),
         email: token.email ?? '',
+        name: (token.name as string) ?? '',
         username: token.username as string,
         role: token.role as Role,
         domain: token.domain as Domain,

@@ -62,17 +62,19 @@ export default function AppSidebar() {
   return (
     <Sidebar collapsible='icon'>
       <SidebarHeader className='bg-primary'>
-        <Image
-          src='/images/logo/Onnex_Logo_white.png'
-          alt='Logo'
-          width={250}
-          height={150}
-          className='justify-self-center'
-        />
+        <div className='relative h-[100] w-[200] self-center'>
+          <Image
+            src='/images/logo/Onnex_Logo_white.png'
+            alt='Logo'
+            width={250}
+            height={150}
+            className='justify-self-center'
+          />
+        </div>
       </SidebarHeader>
       <SidebarContent className='overflow-x-hidden bg-primary text-white'>
         <SidebarGroup>
-          <SidebarGroupLabel className='text-white'>Overview</SidebarGroupLabel>
+          {/* <SidebarGroupLabel className='text-white'>Overview</SidebarGroupLabel> */}
           <SidebarMenu>
             {navItems.map((item) => {
               const Icon = item.icon ? Icons[item.icon] : Icons.logo;

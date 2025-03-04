@@ -50,7 +50,7 @@ export default function UserAuthForm() {
       signIn('credentials', {
         email: data.email,
         password: data.password,
-        callbackUrl: callbackUrl ?? '/dashboard'
+        callbackUrl: callbackUrl ?? '/dashboard/sale/performance-dashboard'
       });
       toast.success('Signed In Successfully!');
     });
@@ -97,7 +97,7 @@ export default function UserAuthForm() {
           />
 
           <Button disabled={loading} className='ml-auto w-full' type='submit'>
-            Continue With Email
+            Sign In
           </Button>
         </form>
       </Form>

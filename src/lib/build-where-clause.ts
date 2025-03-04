@@ -113,7 +113,5 @@ export function buildWhereClause(
     whereClause += ` AND S = '${mainChannelSession}'`;
   }
 
-  console.log(whereClause);
-
   return whereClause;
 }

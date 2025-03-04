@@ -85,6 +85,8 @@ export default function SaleBarChart() {
     dateRange,
     selectedMonthYear,
     selectedYears,
+    setSelectedBarCategory,
+    setSelectedBarBadge,
     selectedQuarterYear
   } = useSalePerformanceStore();
   const [clientTime, setClientTime] = useState('');
@@ -131,11 +133,13 @@ export default function SaleBarChart() {
     type: 'success' | 'pending' | 'high' | 'medium' | 'low' | 'win' | 'loss'
   ) {
     if (data[type] === 0) return;
-    localStorage.setItem(
-      'selectedBar',
-      JSON.stringify({ category: data.title, type })
-    );
-    window.dispatchEvent(new Event('storage'));
+    setSelectedBarCategory(data.title);
+
+    if (data.title !== 'Win/Loss') {
+      setSelectedBarBadge('Total');
+    } else {
+      setSelectedBarBadge('Success');
+    }
   }
 
   const transformedData = chartData?.map((item: any) => {
@@ -167,6 +171,7 @@ export default function SaleBarChart() {
       <CardContent>
         <ChartContainer config={chartConfig}>
           <BarChart
+            accessibilityLayer
             layout='vertical'
             data={transformedData}
             width={600}

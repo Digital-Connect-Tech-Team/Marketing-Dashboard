@@ -4,17 +4,29 @@ import { Button } from '@/components/ui/button';
 import DateRangePicker from '@/features/sale/components/date-picker';
 import ChannelSelect from '@/features/sale/components/channel-selector';
 import ResetFilterButton from '@/features/sale/components/reset-filter-buttoon';
+import Image from 'next/image';
 export default async function OverViewLayout({
   card_totals,
-  sale_bars
+  sale_bars,
+  sale_table
 }: {
   card_totals: React.ReactNode;
   sale_bars: React.ReactNode;
+  sale_table: React.ReactNode;
 }) {
   return (
     <PageContainer>
       <div className='flex flex-1 flex-col space-y-2'>
         {/* Header */}
+        <div className='relative h-[100] w-[200]'>
+          <Image
+            src='/images/logo/Onnex_Logo.jpg'
+            alt='Onnex Logo'
+            width={250}
+            height={150}
+            className='justify-self-center'
+          />
+        </div>
         <div className='flex items-center justify-between space-y-2'>
           <h2 className='text-2xl font-bold tracking-tight'>
             Sale Performance Dashboard
@@ -45,7 +57,9 @@ export default async function OverViewLayout({
 
         <div className='grid grid-cols-1 gap-4 md:grid-cols-2 lg:grid-cols-8'>
           <div className='col-span-4'>{sale_bars}</div>
-          <div className='col-span-4'></div>
+          <div className='col-span-4 max-h-[550px] overflow-auto'>
+            {sale_table}
+          </div>
         </div>
       </div>
     </PageContainer>

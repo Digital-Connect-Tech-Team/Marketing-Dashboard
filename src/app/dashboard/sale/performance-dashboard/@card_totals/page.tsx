@@ -13,23 +13,23 @@ const titles = [
 
 export default function CardTotals() {
   const [isLoading, setIsLoading] = useState(true);
-  const {
-    chartData,
-    refreshChartData,
-    selectedMonthYear,
-    dateRange,
-    selectedYears,
-    selectedQuarterYear
-  } = useSalePerformanceStore();
+  const { chartData, refreshChartData, fetchTable } = useSalePerformanceStore();
 
   useEffect(() => {
     const loadData = async () => {
-      await refreshChartData();
+      await fetchTable();
       setIsLoading(false);
     };
 
     loadData();
+    const interval = setInterval(loadData, 30000);
+
+    return () => clearInterval(interval);
   }, []);
+
+  useEffect(() => {
+    console.log('📊 Updated chartData');
+  }, [chartData]);
 
   return (
     <div className='grid gap-4 md:grid-cols-5 lg:grid-cols-5'>

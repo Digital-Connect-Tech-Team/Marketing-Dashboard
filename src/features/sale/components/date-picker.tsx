@@ -18,19 +18,7 @@ import { useSession } from 'next-auth/react';
 
 export default function DateRangePicker({ initialData }: { initialData: any }) {
   const { data: session } = useSession();
-  const {
-    dateRange,
-    setDateRange,
-    selectedMonthYear,
-    selectedQuarterYear,
-    selectedYears,
-    selectedType,
-    setSelectedType,
-    resetDateFilters,
-    refreshChartData,
-    resetChannel,
-    setChartData
-  } = useSalePerformanceStore();
+  const store = useSalePerformanceStore();
 
   const [open, setOpen] = useState(false);
 
@@ -51,60 +39,73 @@ export default function DateRangePicker({ initialData }: { initialData: any }) {
 
   useEffect(() => {
     if (initialData) {
-      setChartData(initialData);
+      store.setChartData(initialData);
     }
-  }, [initialData, setChartData]);
+  }, [initialData, store.setChartData]);
+
+  useEffect(() => {
+    store.setSelectedBarBadge('');
+    store.setSelectedBarCategory('');
+  }, [store.chartData]);
 
   const formattedDate = useMemo(() => {
-    if (selectedType === 'date' && dateRange?.from) {
-      return dateRange.to
-        ? `${format(dateRange.from, 'MMM d, yyyy')} to ${format(dateRange.to, 'MMM d, yyyy')}`
-        : format(dateRange.from, 'MMM d, yyyy');
+    if (store.selectedType === 'date' && store.dateRange?.from) {
+      return store.dateRange.to
+        ? `${format(store.dateRange.from, 'MMM d, yyyy')} to ${format(store.dateRange.to, 'MMM d, yyyy')}`
+        : format(store.dateRange.from, 'MMM d, yyyy');
     }
-    if (selectedType === 'month' && selectedMonthYear.months.length > 0) {
-      return `${selectedMonthYear.months.join(', ')}, ${selectedMonthYear.year}`;
+    if (
+      store.selectedType === 'month' &&
+      store.selectedMonthYear.months.length > 0
+    ) {
+      return `${store.selectedMonthYear.months.join(', ')}, ${store.selectedMonthYear.year}`;
     }
-    if (selectedType === 'quarter' && selectedQuarterYear.quarters.length > 0) {
-      return `${selectedQuarterYear.quarters.join(', ')}, ${selectedQuarterYear.year}`;
+    if (
+      store.selectedType === 'quarter' &&
+      store.selectedQuarterYear.quarters.length > 0
+    ) {
+      return `${store.selectedQuarterYear.quarters.join(', ')}, ${store.selectedQuarterYear.year}`;
     }
-    if (selectedType === 'year' && selectedYears.length > 0) {
-      return selectedYears.join(', ');
+    if (store.selectedType === 'year' && store.selectedYears.length > 0) {
+      return store.selectedYears.join(', ');
     }
     return 'Period Range';
   }, [
-    selectedType,
-    dateRange,
-    selectedMonthYear,
-    selectedQuarterYear,
-    selectedYears
+    store.selectedType,
+    store.dateRange,
+    store.selectedMonthYear,
+    store.selectedQuarterYear,
+    store.selectedYears
   ]);
 
   const setFilters = async () => {
     let filterParams: any = {
-      type: selectedType,
-      from: dateRange?.from
-        ? new Date(dateRange.from.setHours(0, 0, 0, 0)).toISOString() // Convert to UTC
+      type: store.selectedType,
+      from: store.dateRange?.from
+        ? new Date(store.dateRange.from.setHours(0, 0, 0, 0)).toISOString() // Convert to UTC
         : null,
-      to: dateRange?.to
-        ? new Date(dateRange.to.setHours(23, 59, 59, 999)).toISOString() // Convert to UTC end of day
+      to: store.dateRange?.to
+        ? new Date(store.dateRange.to.setHours(23, 59, 59, 999)).toISOString() // Convert to UTC end of day
         : null,
       months:
-        selectedMonthYear.months.length > 0 ? selectedMonthYear.months : null,
-      year: selectedMonthYear.year || null,
-      quarters:
-        selectedQuarterYear.quarters.length > 0
-          ? selectedQuarterYear.quarters
+        store.selectedMonthYear.months.length > 0
+          ? store.selectedMonthYear.months
           : null,
-      years: selectedYears.length > 0 ? selectedYears : null
+      year: store.selectedMonthYear.year || null,
+      quarters:
+        store.selectedQuarterYear.quarters.length > 0
+          ? store.selectedQuarterYear.quarters
+          : null,
+      years: store.selectedYears.length > 0 ? store.selectedYears : null
     };
 
     try {
       if (session?.user.role.name === 'Master') {
-        resetChannel('all');
+        store.resetChannel('all');
       } else {
-        resetChannel(['sub', 'sale']);
+        store.resetChannel(['sub', 'sale']);
       }
-      refreshChartData();
+      store.refreshChartData();
     } catch (error) {
       console.error('❌ Error fetching filtered data:', error);
     }
@@ -132,10 +133,10 @@ export default function DateRangePicker({ initialData }: { initialData: any }) {
             {['date', 'month', 'quarter', 'year'].map((type) => (
               <Button
                 key={type}
-                variant={selectedType === type ? 'default' : 'secondary'}
+                variant={store.selectedType === type ? 'default' : 'secondary'}
                 onClick={() => {
-                  setSelectedType(type);
-                  resetDateFilters();
+                  store.setSelectedType(type);
+                  store.resetDateFilters();
                 }}
               >
                 {type.charAt(0).toUpperCase() + type.slice(1)}
@@ -143,12 +144,12 @@ export default function DateRangePicker({ initialData }: { initialData: any }) {
             ))}
           </div>
           <div className='rounded-md border bg-white p-4 shadow-lg dark:border-gray-700 dark:bg-neutral-900 dark:text-white'>
-            {selectedType === 'date' && (
+            {store.selectedType === 'date' && (
               <Calendar
                 mode='range'
-                selected={dateRange}
-                defaultMonth={dateRange?.from}
-                onSelect={setDateRange}
+                selected={store.dateRange}
+                defaultMonth={store.dateRange?.from}
+                onSelect={store.setDateRange}
                 numberOfMonths={2}
                 modifiers={{
                   sunday: (date) => date.getDay() === 0
@@ -170,9 +171,9 @@ export default function DateRangePicker({ initialData }: { initialData: any }) {
                 }}
               />
             )}
-            {selectedType === 'month' && <MonthSelector />}
-            {selectedType === 'quarter' && <QuarterSelector />}
-            {selectedType === 'year' && <YearSelector />}
+            {store.selectedType === 'month' && <MonthSelector />}
+            {store.selectedType === 'quarter' && <QuarterSelector />}
+            {store.selectedType === 'year' && <YearSelector />}
           </div>
         </div>
         <div className='items-right gap gap-col-3 flex justify-end gap-4 px-4 pb-4'>
@@ -180,7 +181,7 @@ export default function DateRangePicker({ initialData }: { initialData: any }) {
             variant='secondary'
             className='w-[140px]'
             onClick={() => {
-              resetDateFilters();
+              store.resetDateFilters();
             }}
           >
             Clear Selection

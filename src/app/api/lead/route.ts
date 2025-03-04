@@ -1,27 +1,86 @@
 import { NextResponse } from 'next/server';
 import { prisma } from '@/lib/prisma';
-import { SaleRes } from '@/interfaces/sale';
+import { SaleRes, SaleTable } from '@/interfaces/sale';
 import { auth } from '@/lib/auth';
 import { convertToExcelSerial } from '@/lib/utils';
-import { FilterDate } from '@/interfaces/global';
-
-async function getDataSalePerformance(filter: FilterDate) {}
+import { buildWhereClause } from '@/lib/build-where-clause';
 
 export async function POST(request: Request) {
   try {
+    const session = await auth();
+    const mainChannelSession = session?.user?.domain?.main_channel;
     const { filters } = await request.json();
 
-    if (!filters || typeof filters !== 'object') {
-      console.error('❌ Invalid Filters:', filters);
-      return NextResponse.json(
-        { error: 'Filters missing or invalid' },
-        { status: 400 }
-      );
+    let whereClause = buildWhereClause(
+      filters,
+      session,
+      mainChannelSession ?? ''
+    );
+
+    if (filters.typeCategory) {
+      const baseCondition = " AND Z = 'สำรวจแล้ว'";
+      switch (filters.typeCategory) {
+        case 'Survey':
+          whereClause +=
+            filters.typeBadge === 'Success'
+              ? baseCondition
+              : " AND Z != 'สำรวจแล้ว'";
+          break;
+        case 'Quotation':
+          if (filters.typeBadge === 'Success') {
+            whereClause += `${baseCondition} AND AI IS NOT NULL AND AI != ''`;
+          } else if (filters.typeBadge === 'Pending') {
+            whereClause += `${baseCondition} AND (AI IS NULL OR AI = '')`;
+          } else {
+            whereClause += baseCondition;
+          }
+          break;
+        case 'Nurturing':
+          if (['High', 'Medium', 'Low'].includes(filters.typeBadge)) {
+            whereClause += `${baseCondition} AND AI IS NOT NULL AND AI != '' AND BU = '${filters.typeBadge}'`;
+          } else if (filters.typeBadge === 'Others') {
+            whereClause += `${baseCondition} AND AI IS NOT NULL AND AI != '' AND BU NOT IN ('High', 'Medium', 'Low', 'Win', 'Loss')`;
+          } else {
+            whereClause += `${baseCondition} AND AI IS NOT NULL AND AI != '' AND BU NOT IN ('Win', 'Loss')`;
+          }
+          break;
+        case 'Win/Loss':
+          if (['Win', 'Loss'].includes(filters.typeBadge)) {
+            whereClause += `${baseCondition} AND AI IS NOT NULL AND AI != '' AND BU = '${filters.typeBadge}'`;
+          } else {
+            whereClause += `${baseCondition} AND AI IS NOT NULL AND AI != '' AND BU = 'Win'`;
+          }
+          break;
+      }
     }
 
-    const data = await getDataSalePerformance(filters);
+    const rawData: SaleTable[] = await prisma.$queryRawUnsafe(`
+        SELECT   
+          TRIM(F) AS rd,
+          TRIM(G) AS name,
+          TRIM(H) AS phone,
+          TRIM(S) AS main,
+          TRIM(T) AS sub,
+          TRIM(W) AS sale,
+          TRIM(BV) AS total
+        FROM salesvision_db.ver03
+        ${whereClause}
+        ORDER BY id ASC
+        LIMIT ${filters.pageSize} OFFSET ${filters.offset};
+    `);
 
-    // return NextResponse.json({ data });
+    const totalRecords: { count: number }[] = await prisma.$queryRawUnsafe(`
+      SELECT COUNT(*) as count FROM salesvision_db.ver03 ${whereClause};
+    `);
+
+    const totalCount = Number(totalRecords[0]?.count ?? 0);
+
+    return NextResponse.json({
+      data: rawData,
+      totalData: totalCount,
+      currentPage: Math.floor(filters.offset / filters.pageSize) + 1,
+      totalPages: Math.ceil((totalCount || 1) / filters.pageSize)
+    });
   } catch (error) {
     console.error('❌ Error in API:', error);
     return NextResponse.json(
@@ -33,23 +92,6 @@ export async function POST(request: Request) {
 
 export async function GET(request: Request) {
   try {
-    // let decoded: any = {};
-    // try {
-    //   decoded = jwt.verify(SECRET_KEY);
-    // } catch (error) {
-    //   console.error("❌ Error verifying token:", error);
-    //   return NextResponse.json({ error: "Invalid Token" }, { status: 401 });
-    // }
-
-    // console.log("📡 Received Filters:", decoded.filters);
-
-    // if(decoded.filters.type === 'date' && decoded.filters.from && decoded.filters.to){
-    //   const fromDate = convertToExcelSerial(decoded.filters.from);
-    //   const toDate = convertToExcelSerial(decoded.filters.to);
-    // }
-
-    // console.log("ssssss decoded.filters:" , decoded.filters);
-
     const session = await auth();
     const mainChannel = session?.user?.domain?.main_channel;
 

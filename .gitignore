@@ -24,8 +24,6 @@ npm-debug.log*
 yarn-debug.log*
 yarn-error.log*
 
-/src/scripts/*
-
 # local env files
 .env*.local
 .env
@@ -38,3 +36,5 @@ yarn-error.log*
 next-env.d.ts
 
 .idea/
+
+src/scripts/*.ts
